@@ -1,10 +1,15 @@
-﻿import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { supabase } from '../../src/lib/supabase'
 import type { AreaHerramienta } from '../types'
 import ReportePersonal from './ReportePersonal'
 import ReporteGeneral from './ReporteGeneral'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
+type Turno = 'manana' | 'noche'
+
+const TURNO_LABELS: Record<Turno, string> = { manana: '🌅 Mañana', noche: '🌙 Noche' }
+const TURNO_SIMPLE: Record<Turno, string> = { manana: 'Mañana', noche: 'Noche' }
+
 interface AreaConStats extends AreaHerramienta {
   totalPersonal:     number
   totalHerramientas: number
@@ -19,6 +24,7 @@ interface Colaborador {
   foto_url:          string | null
   activo:            boolean
   created_at:        string
+  turno:             Turno
   totalHerramientas: number
   totalPerdidas:     number
   totalSolicitudes:  number
@@ -115,8 +121,9 @@ function revisadoHoy(ultimaRevision: string | null): boolean {
 
 // ── Componente principal ──────────────────────────────────────────────────────
 export default function HerramientasPersonal() {
-  const [vista,      setVista]      = useState<'sectores' | 'personal'>('sectores')
-  const [areaActiva, setAreaActiva] = useState<AreaConStats | null>(null)
+  const [vista,       setVista]       = useState<'sectores' | 'personal'>('sectores')
+  const [areaActiva,  setAreaActiva]  = useState<AreaConStats | null>(null)
+  const [turnoActivo, setTurnoActivo] = useState<Turno>('manana')
 
   const [areas,         setAreas]         = useState<AreaConStats[]>([])
   const [cargandoAreas, setCargandoAreas] = useState(true)
@@ -128,6 +135,7 @@ export default function HerramientasPersonal() {
   // Modal nuevo colaborador
   const [modalNuevo,    setModalNuevo]    = useState(false)
   const [formNombre,    setFormNombre]    = useState('')
+  const [formTurno,     setFormTurno]     = useState<Turno>('manana')
   const [guardandoForm, setGuardandoForm] = useState(false)
   const [errForm,       setErrForm]       = useState('')
 
@@ -205,10 +213,15 @@ export default function HerramientasPersonal() {
   }
 
   // ── Pantalla 2 ─────────────────────────────────────────────────────────────
-  async function cargarPersonal(areaId: string) {
+  async function cargarPersonal(areaId: string, turno: Turno) {
     setCargandoPersonal(true)
     const [personalRes, cfgRes] = await Promise.all([
-      supabase.from('herramientas_personal').select('id, area_id, nombre, foto_url, activo, created_at').eq('area_id', areaId).eq('activo', true).order('nombre'),
+      supabase.from('herramientas_personal')
+        .select('id, area_id, nombre, foto_url, activo, created_at, turno')
+        .eq('area_id', areaId)
+        .eq('turno', turno)
+        .eq('activo', true)
+        .order('nombre'),
       supabase.from('herramientas_config_revision').select('dia_revision_personal, hora_inicio_personal, hora_fin_personal').limit(1).maybeSingle(),
     ])
 
@@ -268,11 +281,11 @@ export default function HerramientasPersonal() {
     setCargandoPersonal(false)
   }
 
-  function entrarSector(area: AreaConStats) {
-    setAreaActiva(area); setVista('personal'); cargarPersonal(area.id)
+  function entrarSector(area: AreaConStats, turno: Turno) {
+    setAreaActiva(area); setTurnoActivo(turno); setVista('personal'); cargarPersonal(area.id, turno)
   }
   function volverSectores() {
-    setVista('sectores'); setAreaActiva(null); setColaboradores([]); cerrarPanel()
+    setVista('sectores'); setAreaActiva(null); setTurnoActivo('manana'); setColaboradores([]); cerrarPanel()
   }
 
   // ── Modal nuevo colaborador ─────────────────────────────────────────────────
@@ -280,11 +293,15 @@ export default function HerramientasPersonal() {
     if (!formNombre.trim()) { setErrForm('El nombre es requerido.'); return }
     if (!areaActiva) return
     setGuardandoForm(true); setErrForm('')
-    const { error } = await supabase.from('herramientas_personal').insert({ nombre: formNombre.trim(), area_id: areaActiva.id })
+    const { error } = await supabase.from('herramientas_personal').insert({
+      nombre:  formNombre.trim(),
+      area_id: areaActiva.id,
+      turno:   formTurno,
+    })
     setGuardandoForm(false)
     if (error) { setErrForm('Error: ' + error.message); return }
     setModalNuevo(false); setFormNombre('')
-    cargarPersonal(areaActiva.id); cargarAreas()
+    cargarPersonal(areaActiva.id, turnoActivo); cargarAreas()
   }
 
   // ── Panel revisión ──────────────────────────────────────────────────────────
@@ -352,7 +369,6 @@ export default function HerramientasPersonal() {
     const hoy    = new Date().toISOString().split('T')[0]
     const manana = new Date(Date.now() + 86400000).toISOString().split('T')[0]
 
-    // Si ya existe una revisión hoy, actualizarla en vez de duplicar
     const { data: existRevs } = await supabase
       .from('herramientas_revisiones')
       .select('id')
@@ -392,7 +408,6 @@ export default function HerramientasPersonal() {
 
       for (const h of marcadas) {
         if (h.estado === 'tiene') {
-          // Restaurar asignación a estado normal si antes estaba marcada como perdida
           await supabase.from('herramientas_asignaciones').update({ estado: 'asignada' }).eq('id', h.asignacion_id)
           continue
         }
@@ -427,11 +442,13 @@ export default function HerramientasPersonal() {
     setGuardando(false); setGuardado(true)
     setTimeout(() => {
       cerrarPanel()
-      if (areaActiva) { cargarPersonal(areaActiva.id); cargarAreas() }
+      if (areaActiva) { cargarPersonal(areaActiva.id, turnoActivo); cargarAreas() }
     }, 1500)
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
+  const areaNombreTurno = areaActiva ? `${areaActiva.nombre} — ${TURNO_SIMPLE[turnoActivo]}` : null
+
   return (
     <div style={{ padding: '1.5rem' }}>
       <style>{`
@@ -456,10 +473,11 @@ export default function HerramientasPersonal() {
         ? <PantallaSectores areas={areas} cargando={cargandoAreas} onEntrar={entrarSector} />
         : <PantallaPersonal
             area={areaActiva!}
+            turno={turnoActivo}
             colaboradores={colaboradores}
             cargando={cargandoPersonal}
             onVolver={volverSectores}
-            onAbrirNuevo={() => { setFormNombre(''); setErrForm(''); setModalNuevo(true) }}
+            onAbrirNuevo={() => { setFormNombre(''); setFormTurno(turnoActivo); setErrForm(''); setModalNuevo(true) }}
             onRevisar={abrirPanel}
             onHerramientas={c => { setPersonaHer(c); setModalHer(true) }}
             onReporte={c => setReportePersona(c)}
@@ -485,6 +503,22 @@ export default function HerramientasPersonal() {
                 <input className="her-input" value={formNombre} onChange={e => setFormNombre(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && guardarNuevo()} placeholder="Ej: María García" style={sInput} autoFocus />
               </div>
+              <div>
+                <label style={sLabel}>Turno <span style={{ color: '#DC2626' }}>*</span></label>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {(['manana', 'noche'] as Turno[]).map(t => (
+                    <button key={t} type="button" onClick={() => setFormTurno(t)} style={{
+                      flex: 1, padding: '0.5rem', borderRadius: '8px', fontSize: '0.875rem', cursor: 'pointer',
+                      border: `1.5px solid ${formTurno === t ? '#0D9488' : '#E5E7EB'}`,
+                      background: formTurno === t ? '#F0FDFA' : 'white',
+                      color: formTurno === t ? '#0D9488' : '#6B7280',
+                      fontWeight: formTurno === t ? '700' : '500',
+                    }}>
+                      {TURNO_LABELS[t]}
+                    </button>
+                  ))}
+                </div>
+              </div>
               {errForm && <p style={sErrMsg}>⚠️ {errForm}</p>}
             </div>
             <div style={{ padding: '0 1.5rem 1.25rem', display: 'flex', gap: '0.75rem' }}>
@@ -497,13 +531,13 @@ export default function HerramientasPersonal() {
         </>
       )}
 
-      {/* Modal herramientas (self-contained) */}
+      {/* Modal herramientas */}
       {modalHer && personaHer && areaActiva && (
         <ModalHerramientas
           persona={personaHer}
           areaId={areaActiva.id}
           onCerrar={() => setModalHer(false)}
-          onRefresh={() => { cargarPersonal(areaActiva.id); cargarAreas() }}
+          onRefresh={() => { cargarPersonal(areaActiva.id, turnoActivo); cargarAreas() }}
         />
       )}
 
@@ -511,15 +545,15 @@ export default function HerramientasPersonal() {
       {reportePersona && (
         <ReportePersonal
           persona={reportePersona}
-          areaNombre={areaActiva?.nombre ?? null}
+          areaNombre={areaNombreTurno}
           onCerrar={() => setReportePersona(null)}
         />
       )}
 
-      {/* Reporte general del sector */}
+      {/* Reporte general del sector/turno */}
       {verReporteGral && areaActiva && (
         <ReporteGeneral
-          area={areaActiva}
+          area={{ id: areaActiva.id, nombre: areaNombreTurno ?? areaActiva.nombre }}
           personalIds={colaboradores.map(c => c.id)}
           colaboradores={colaboradores.map(c => ({ id: c.id, nombre: c.nombre }))}
           onCerrar={() => setVerReporteGral(false)}
@@ -530,7 +564,7 @@ export default function HerramientasPersonal() {
       {revisar && (
         <PanelRevisar
           colaborador={revisar}
-          areaNombre={areaActiva?.nombre ?? null}
+          areaNombre={areaNombreTurno}
           configRevision={configRevision}
           herramientas={herRevision}
           cargandoPanel={cargandoPanel}
@@ -550,13 +584,13 @@ export default function HerramientasPersonal() {
 
 // ── Pantalla 1: Sectores ──────────────────────────────────────────────────────
 function PantallaSectores({ areas, cargando, onEntrar }: {
-  areas: AreaConStats[]; cargando: boolean; onEntrar: (a: AreaConStats) => void
+  areas: AreaConStats[]; cargando: boolean; onEntrar: (a: AreaConStats, t: Turno) => void
 }) {
   return (
     <>
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ margin: 0, fontSize: '1.3rem', fontWeight: '700', color: '#111827' }}>👥 Herramientas Personal</h1>
-        <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: '#6B7280' }}>Selecciona un sector para gestionar su personal</p>
+        <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: '#6B7280' }}>Selecciona un sector y turno para gestionar su personal</p>
       </div>
       {cargando ? (
         <p style={{ textAlign: 'center', padding: '3rem 0', color: '#9CA3AF' }}>Cargando sectores...</p>
@@ -575,7 +609,7 @@ function PantallaSectores({ areas, cargando, onEntrar }: {
   )
 }
 
-function TarjetaSector({ area, onEntrar }: { area: AreaConStats; onEntrar: (a: AreaConStats) => void }) {
+function TarjetaSector({ area, onEntrar }: { area: AreaConStats; onEntrar: (a: AreaConStats, t: Turno) => void }) {
   const estadoColor = area.totalPerdidas > 0 ? '#DC2626' : area.totalPersonal === 0 ? '#9CA3AF' : '#16A34A'
   const estadoLabel = area.totalPerdidas > 0 ? 'Con faltantes' : area.totalPersonal === 0 ? 'Sin personal' : 'Sin novedades'
   const stats = [
@@ -602,21 +636,33 @@ function TarjetaSector({ area, onEntrar }: { area: AreaConStats; onEntrar: (a: A
           </div>
         ))}
       </div>
-      <div style={{ padding: '0.875rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F3F4F6' }}>
-        <span style={{ fontSize: '0.73rem', fontWeight: '700', color: estadoColor, background: estadoColor + '18', padding: '0.25rem 0.6rem', borderRadius: '20px' }}>● {estadoLabel}</span>
-        <button onClick={() => onEntrar(area)} style={{ ...sBtnPrim, fontSize: '0.8rem', padding: '0.4rem 1rem' }}>Ingresar →</button>
+      <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid #F3F4F6' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.625rem' }}>
+          <span style={{ fontSize: '0.73rem', fontWeight: '700', color: estadoColor, background: estadoColor + '18', padding: '0.25rem 0.6rem', borderRadius: '20px' }}>● {estadoLabel}</span>
+        </div>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button onClick={() => onEntrar(area, 'manana')} style={{ flex: 1, background: 'linear-gradient(135deg,#0369A1,#0284C7)', color: 'white', border: 'none', borderRadius: '8px', padding: '0.45rem 0.5rem', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer' }}>
+            🌅 Mañana →
+          </button>
+          <button onClick={() => onEntrar(area, 'noche')} style={{ flex: 1, background: 'linear-gradient(135deg,#6D28D9,#5B21B6)', color: 'white', border: 'none', borderRadius: '8px', padding: '0.45rem 0.5rem', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer' }}>
+            🌙 Noche →
+          </button>
+        </div>
       </div>
     </div>
   )
 }
 
-// ── Pantalla 2: Personal del sector ──────────────────────────────────────────
-function PantallaPersonal({ area, colaboradores, cargando, onVolver, onAbrirNuevo, onRevisar, onHerramientas, onReporte, onReporteGeneral }: {
-  area: AreaConStats; colaboradores: Colaborador[]; cargando: boolean
+// ── Pantalla 2: Personal del sector/turno ─────────────────────────────────────
+function PantallaPersonal({ area, turno, colaboradores, cargando, onVolver, onAbrirNuevo, onRevisar, onHerramientas, onReporte, onReporteGeneral }: {
+  area: AreaConStats; turno: Turno; colaboradores: Colaborador[]; cargando: boolean
   onVolver: () => void; onAbrirNuevo: () => void
   onRevisar: (c: Colaborador) => void; onHerramientas: (c: Colaborador) => void
   onReporte: (c: Colaborador) => void; onReporteGeneral: () => void
 }) {
+  const turnoColor = turno === 'manana' ? '#0284C7' : '#6D28D9'
+  const turnoBg    = turno === 'manana' ? '#EFF6FF' : '#EDE9FE'
+
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.375rem', flexWrap: 'wrap' }}>
@@ -627,11 +673,13 @@ function PantallaPersonal({ area, colaboradores, cargando, onVolver, onAbrirNuev
           <span>👥 Herramientas Personal</span>
           <span style={{ color: '#D1D5DB' }}>—</span>
           <span style={{ background: gradienteArea(area.nombre), WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>{area.nombre}</span>
+          <span style={{ color: '#D1D5DB' }}>—</span>
+          <span style={{ fontSize: '0.85rem', fontWeight: '700', color: turnoColor, background: turnoBg, padding: '0.2rem 0.6rem', borderRadius: '20px' }}>{TURNO_LABELS[turno]}</span>
         </h1>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
         <p style={{ margin: 0, fontSize: '0.82rem', color: '#9CA3AF' }}>
-          {cargando ? 'Cargando...' : `${colaboradores.length} ${colaboradores.length === 1 ? 'colaborador' : 'colaboradores'} en este sector`}
+          {cargando ? 'Cargando...' : `${colaboradores.length} ${colaboradores.length === 1 ? 'colaborador' : 'colaboradores'} — turno ${TURNO_SIMPLE[turno].toLowerCase()}`}
         </p>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button onClick={onReporteGeneral} style={{ ...sBtnSec, fontSize: '0.8rem', padding: '0.4rem 0.875rem' }}>📊 Reporte general</button>
@@ -643,7 +691,7 @@ function PantallaPersonal({ area, colaboradores, cargando, onVolver, onAbrirNuev
       ) : colaboradores.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem 1rem', background: 'white', borderRadius: '14px', border: '1.5px dashed #E5E7EB' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>👤</div>
-          <p style={{ color: '#374151', fontWeight: '600', margin: '0 0 0.5rem' }}>No hay personal en este sector</p>
+          <p style={{ color: '#374151', fontWeight: '600', margin: '0 0 0.5rem' }}>No hay personal en el turno {TURNO_SIMPLE[turno].toLowerCase()}</p>
           <p style={{ color: '#9CA3AF', fontSize: '0.85rem', margin: 0 }}>Usa "+ Añadir personal" para registrar colaboradores.</p>
         </div>
       ) : (
@@ -711,7 +759,6 @@ function ModalHerramientas({ persona, areaId, onCerrar, onRefresh }: {
   const [asignaciones, setAsignaciones] = useState<AsignacionDetalle[]>([])
   const [items,        setItems]        = useState<ItemArea[]>([])
   const [cargando,     setCargando]     = useState(true)
-
 
   const [editandoId, setEditandoId] = useState<string | null>(null)
   const [editCant,   setEditCant]   = useState(1)
@@ -790,11 +837,9 @@ function ModalHerramientas({ persona, areaId, onCerrar, onRefresh }: {
     setCreandoItem(true); setErrItem('')
 
     const payloadItem = { tipo: 'area', area_id: areaId, nombre: fNombre.trim(), descripcion: null, foto_url: fFotoB64 ?? null, cantidad_total: fCantidad, precio, moneda: 'BOB', estado: 'completa' }
-    console.log('[crearItem] payload herramientas_items:', payloadItem)
     const { data: ni, error: errItem_ } = await supabase.from('herramientas_items')
       .insert(payloadItem)
       .select('id, nombre, precio, foto_url, cantidad_total').single()
-    console.log('[crearItem] resultado herramientas_items:', { data: ni, error: errItem_ })
 
     setCreandoItem(false)
     if (errItem_ || !ni) { setErrItem('Error al crear: ' + (errItem_?.message ?? 'sin datos')); return }
@@ -802,11 +847,9 @@ function ModalHerramientas({ persona, areaId, onCerrar, onRefresh }: {
 
     const hoy = new Date().toISOString().split('T')[0]
     const payloadAsig = { personal_id: persona.id, item_id: newIt.id, fecha_asignacion: hoy, cantidad: fCantidad }
-    console.log('[crearItem] payload herramientas_asignaciones:', payloadAsig)
-    const { data: asigData, error: errAsig_ } = await supabase.from('herramientas_asignaciones')
+    const { error: errAsig_ } = await supabase.from('herramientas_asignaciones')
       .insert(payloadAsig)
       .select('id').single()
-    console.log('[crearItem] resultado herramientas_asignaciones:', { data: asigData, error: errAsig_ })
 
     if (errAsig_) { setErrItem('Herramienta creada pero error al asignar: ' + errAsig_.message); await cargar(); onRefresh(); setVerFormItem(false); resetFormItem(); return }
 
@@ -818,7 +861,6 @@ function ModalHerramientas({ persona, areaId, onCerrar, onRefresh }: {
     <>
       <div className="modal-overlay" onClick={onCerrar} style={{ ...sOverlay, zIndex: 2200 }} />
       <div className="modal-box" style={{ ...sModalBox, zIndex: 2201, width: 'min(560px, calc(100vw - 2rem))', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
-        {/* Header */}
         <div style={sModalHdr}>
           <div>
             <div style={{ color: 'white', fontWeight: '700', fontSize: '1rem' }}>🔧 Herramientas — {persona.nombre}</div>
@@ -829,7 +871,6 @@ function ModalHerramientas({ persona, areaId, onCerrar, onRefresh }: {
 
         <div style={{ overflowY: 'auto', flex: 1, padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-          {/* ── Herramientas asignadas ── */}
           <div>
             <div style={sTitSec}>Herramientas asignadas</div>
             {cargando ? (
@@ -882,7 +923,6 @@ function ModalHerramientas({ persona, areaId, onCerrar, onRefresh }: {
             )}
           </div>
 
-          {/* ── Añadir herramienta ── */}
           <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: '1.25rem' }}>
             <div style={sTitSec}>Añadir herramienta</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.75rem' }}>
@@ -899,22 +939,13 @@ function ModalHerramientas({ persona, areaId, onCerrar, onRefresh }: {
                 </>
               )}
 
-              {/* Formulario nueva herramienta */}
               {verFormItem && (
                 <div style={{ background: '#F9FAFB', borderRadius: '12px', padding: '1.125rem', border: '1.5px solid #E5E7EB' }}>
                   <div style={{ ...sTitSec, marginBottom: '1rem' }}>Nueva herramienta en el sector</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-
-                    {/* Foto desde archivo */}
                     <div>
                       <label style={sLabel}>Foto</label>
-                      <input
-                        ref={fotoInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFotoChange}
-                        style={{ display: 'none' }}
-                      />
+                      <input ref={fotoInputRef} type="file" accept="image/*" onChange={handleFotoChange} style={{ display: 'none' }} />
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <button type="button" onClick={() => fotoInputRef.current?.click()}
                           style={{ ...sBtnSec, fontSize: '0.8rem', padding: '0.45rem 0.875rem', whiteSpace: 'nowrap' }}>
@@ -931,12 +962,10 @@ function ModalHerramientas({ persona, areaId, onCerrar, onRefresh }: {
                         )}
                       </div>
                     </div>
-
                     <div>
                       <label style={sLabel}>Nombre <span style={{ color: '#DC2626' }}>*</span></label>
                       <input className="her-input" value={fNombre} onChange={e => setFNombre(e.target.value)} placeholder="Ej: Caja registradora" style={sInput} autoFocus />
                     </div>
-
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
                       <div>
                         <label style={sLabel}>Precio (Bs)</label>
@@ -947,7 +976,6 @@ function ModalHerramientas({ persona, areaId, onCerrar, onRefresh }: {
                         <input className="her-input" type="number" min={1} value={fCantidad} onChange={e => setFCantidad(Math.max(1, parseInt(e.target.value) || 1))} style={sInput} />
                       </div>
                     </div>
-
                     {errItem && <p style={sErrMsg}>⚠️ {errItem}</p>}
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <button onClick={() => { setVerFormItem(false); resetFormItem() }} style={{ ...sBtnSec, flexShrink: 0 }}>Cancelar</button>
@@ -999,7 +1027,6 @@ function PanelRevisar({ colaborador: c, areaNombre, configRevision, herramientas
       <div className="panel-overlay" onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, backdropFilter: 'blur(2px)' }} />
       <div className="panel-drawer" style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(500px,100vw)', background: 'white', zIndex: 2001, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 40px rgba(0,0,0,0.2)' }}>
 
-        {/* Header */}
         <div style={{ background: 'linear-gradient(135deg,#0D9488,#0F766E)', padding: '1.25rem 1.5rem', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.875rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
@@ -1055,7 +1082,6 @@ function PanelRevisar({ colaborador: c, areaNombre, configRevision, herramientas
           </div>
         </div>
 
-        {/* Body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
             <div style={{ ...sTitSec, marginBottom: '0.75rem' }}>🔧 Herramientas asignadas</div>
@@ -1074,9 +1100,7 @@ function PanelRevisar({ colaborador: c, areaNombre, configRevision, herramientas
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
                         <div style={{ width: '36px', height: '36px', borderRadius: '7px', flexShrink: 0, background: '#F0FDFA', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>
-                          {h.foto_url
-                            ? <img src={h.foto_url} alt={h.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            : '🔧'}
+                          {h.foto_url ? <img src={h.foto_url} alt={h.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '🔧'}
                         </div>
                         <div>
                           <div style={{ fontWeight: '600', color: '#111827', fontSize: '0.85rem' }}>{h.nombre}</div>
@@ -1119,7 +1143,6 @@ function PanelRevisar({ colaborador: c, areaNombre, configRevision, herramientas
           </div>
         </div>
 
-        {/* Footer */}
         <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #E5E7EB', background: 'white', flexShrink: 0 }}>
           {guardado ? (
             <div style={{ textAlign: 'center', padding: '0.75rem', background: '#DCFCE7', borderRadius: '10px', color: '#16A34A', fontWeight: '700', fontSize: '0.9rem' }}>✅ Revisión guardada correctamente</div>
