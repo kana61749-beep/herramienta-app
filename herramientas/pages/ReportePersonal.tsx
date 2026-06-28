@@ -41,6 +41,18 @@ function startOf(p: Periodo) {
   if (p === 'mes') return mesStr()
   return anioStr()
 }
+function agruparDescuentosMes(items: AsigIncidencia[]) {
+  const mes = mesStr()
+  const filtrados = items.filter(a => a.fecha_reporte && a.fecha_reporte >= mes)
+  const mapa = new Map<string, { count: number; total: number }>()
+  for (const a of filtrados) {
+    const prev = mapa.get(a.nombre) ?? { count: 0, total: 0 }
+    mapa.set(a.nombre, { count: prev.count + 1, total: prev.total + a.monto_descuento })
+  }
+  return Array.from(mapa.entries())
+    .map(([nombre, { count, total }]) => ({ nombre, count, total }))
+    .sort((a, b) => b.total - a.total)
+}
 function estadoLabel(e: Categoria) {
   return e === 'perdida' ? 'Activa' : e === 'descuento' ? 'Descontado' : 'Por reponer'
 }
@@ -129,6 +141,7 @@ export default function ReportePersonal({ persona, areaNombre, onCerrar }: Props
 
   // ── PDF general (3 categorías) ──────────────────────────────────────────────
   function generarPDF() {
+    const detalleDesc = agruparDescuentosMes(incDescuentos)
     const win = window.open('', '_blank')
     if (!win) return
     win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
@@ -156,13 +169,13 @@ td{padding:0.5rem;border:1px solid #E5E7EB}
   <div class="stat"><div class="val" style="color:#D97706">${incReponer.length}</div><div class="lbl">🔄 Para reponer</div></div>
 </div>
 ${totalDescuentosMes > 0 ? `<div class="total"><span>💰 Total descuentos este mes</span><span>${formatBs(totalDescuentosMes)}</span></div>` : ''}
+${detalleDesc.length > 0 ? `<h2>Descuentos este mes (${detalleDesc.reduce((s, d) => s + d.count, 0)} ítems)</h2>
+<table><tr><th>Herramienta</th><th>Cantidad</th><th>Monto</th></tr>
+${detalleDesc.map(d => `<tr><td>${d.nombre}</td><td>${d.count}</td><td>${formatBs(d.total)}</td></tr>`).join('')}
+</table>` : ''}
 ${incPerdidas.length > 0 ? `<h2>Pérdidas activas (${incPerdidas.length})</h2>
 <table><tr><th>Herramienta</th><th>Fecha</th><th>Estado</th></tr>
 ${incPerdidas.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFecha(a.fecha_reporte) : '—'}</td><td>Activa</td></tr>`).join('')}
-</table>` : ''}
-${incDescuentos.length > 0 ? `<h2>Descuentos (${incDescuentos.length})</h2>
-<table><tr><th>Herramienta</th><th>Fecha</th><th>Monto</th></tr>
-${incDescuentos.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFecha(a.fecha_reporte) : '—'}</td><td>${formatBs(a.monto_descuento)}</td></tr>`).join('')}
 </table>` : ''}
 ${incReponer.length > 0 ? `<h2>Para reponer (${incReponer.length})</h2>
 <table><tr><th>Herramienta</th><th>Fecha</th><th>Precio ref.</th></tr>
@@ -175,12 +188,14 @@ ${incReponer.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFec
 
   // ── WhatsApp general ─────────────────────────────────────────────────────────
   function compartirWhatsApp() {
+    const detalleDesc = agruparDescuentosMes(incDescuentos)
     const lineas = [
       `📊 *Reporte — ${persona.nombre}*`,
       `Sector: ${areaNombre ?? '—'} | ${formatFecha(hoy)}`,
       '',
       `⚠️ Pérdidas activas: ${incPerdidas.length}`,
       `💸 Descuentos: ${incDescuentos.length}${totalDescuentosMes > 0 ? ` · ${formatBs(totalDescuentosMes)} este mes` : ''}`,
+      ...detalleDesc.map(d => `  • ${d.count} ${d.nombre} — ${formatBs(d.total)}`),
       `🔄 Para reponer: ${incReponer.length}`,
     ]
     window.open(`https://wa.me/?text=${encodeURIComponent(lineas.join('\n'))}`, '_blank')

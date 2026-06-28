@@ -44,6 +44,18 @@ function startOf(p: Periodo) {
   if (p === 'mes') return mesStr()
   return anioStr()
 }
+function agruparDescuentosMes(items: AsigIncidencia[]) {
+  const mes = mesStr()
+  const filtrados = items.filter(a => a.fecha_reporte && a.fecha_reporte >= mes)
+  const mapa = new Map<string, { count: number; total: number }>()
+  for (const a of filtrados) {
+    const prev = mapa.get(a.nombre) ?? { count: 0, total: 0 }
+    mapa.set(a.nombre, { count: prev.count + 1, total: prev.total + a.monto_descuento })
+  }
+  return Array.from(mapa.entries())
+    .map(([nombre, { count, total }]) => ({ nombre, count, total }))
+    .sort((a, b) => b.total - a.total)
+}
 function estadoLabel(e: Categoria) {
   return e === 'perdida' ? 'Activa' : e === 'descuento' ? 'Descontado' : 'Por reponer'
 }
@@ -154,6 +166,7 @@ export default function ReporteGeneral({ area, personalIds, colaboradores, onCer
 
   // ── PDF general ──────────────────────────────────────────────────────────────
   function generarPDF() {
+    const detalleDesc = agruparDescuentosMes(incDescuentos)
     const win = window.open('', '_blank')
     if (!win) return
     win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
@@ -181,6 +194,10 @@ td{padding:0.5rem;border:1px solid #E5E7EB}
   <div class="stat"><div class="val" style="color:#D97706">${incReponer.length}</div><div class="lbl">🔄 Para reponer</div></div>
 </div>
 ${totalDescuentosMes > 0 ? `<div class="total"><span>💰 Total descuentos del sector este mes</span><span>${formatBs(totalDescuentosMes)}</span></div>` : ''}
+${detalleDesc.length > 0 ? `<h2>Descuentos este mes (${detalleDesc.reduce((s, d) => s + d.count, 0)} ítems)</h2>
+<table><tr><th>Herramienta</th><th>Cantidad</th><th>Monto</th></tr>
+${detalleDesc.map(d => `<tr><td>${d.nombre}</td><td>${d.count}</td><td>${formatBs(d.total)}</td></tr>`).join('')}
+</table>` : ''}
 ${rankingPersonal.length > 0 ? `<h2>Personal con más incidencias activas</h2>
 <table><tr><th>#</th><th>Colaborador</th><th>Pérdidas</th><th>Descuentos</th><th>Reponer</th></tr>
 ${rankingPersonal.map((c, i) => `<tr><td>${i + 1}</td><td>${c.nombre}</td><td>${c.perdActivas}</td><td>${c.descuentos}</td><td>${c.reponer}</td></tr>`).join('')}
@@ -196,12 +213,14 @@ ${rankingTools.map(([nombre, count], i) => `<tr><td>${i + 1}</td><td>${nombre}</
 
   // ── WhatsApp general ─────────────────────────────────────────────────────────
   function compartirWhatsApp() {
+    const detalleDesc = agruparDescuentosMes(incDescuentos)
     const lineas = [
       `📊 *Reporte General — ${area.nombre}*`,
       `Fecha: ${formatFecha(hoy)} | Personal: ${colaboradores.length}`,
       '',
       `⚠️ Pérdidas activas: ${incPerdidas.length}`,
       `💸 Descuentos: ${incDescuentos.length}${totalDescuentosMes > 0 ? ` · ${formatBs(totalDescuentosMes)} este mes` : ''}`,
+      ...detalleDesc.map(d => `  • ${d.count} ${d.nombre} — ${formatBs(d.total)}`),
       `🔄 Para reponer: ${incReponer.length}`,
       '',
       rankingPersonal.length > 0
