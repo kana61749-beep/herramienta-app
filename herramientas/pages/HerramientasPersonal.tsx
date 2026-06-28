@@ -618,11 +618,11 @@ function PantallaSectores({ areas, cargando, onEntrar }: {
   return (
     <div>
       {/* ── Header ── */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '800', color: '#111827', letterSpacing: '-0.02em' }}>
+      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '800', color: '#111827', letterSpacing: '-0.02em' }}>
           👥 Herramientas Personal
         </h1>
-        <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: '#9CA3AF' }}>
+        <p style={{ margin: '0.35rem 0 0', fontSize: '0.875rem', color: '#9CA3AF' }}>
           Gestión de personal por sector y turno
         </p>
       </div>
@@ -641,28 +641,29 @@ function PantallaSectores({ areas, cargando, onEntrar }: {
         </div>
       ) : (
         <>
-          {/* ── Tab bar de sectores ── */}
-          <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem', marginBottom: '1.75rem', scrollbarWidth: 'none' }}>
-            <style>{`::-webkit-scrollbar { display: none }`}</style>
-            {areas.map(a => {
-              const act = a.id === (sectorId ?? areas[0]?.id)
-              return (
-                <button key={a.id} onClick={() => setSectorId(a.id)} style={{
-                  display: 'flex', alignItems: 'center', gap: '0.45rem', whiteSpace: 'nowrap', flexShrink: 0,
-                  padding: '0.55rem 1.1rem', borderRadius: '100px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: act ? '700' : '600',
-                  border: act ? 'none' : '1.5px solid #E5E7EB',
-                  background: act ? 'linear-gradient(135deg,#0D9488,#0F766E)' : 'white',
-                  color: act ? 'white' : '#6B7280',
-                  boxShadow: act ? '0 3px 10px rgba(13,148,136,0.35)' : 'none',
-                  transition: 'all 0.15s',
-                }}>
-                  {a.nombre}
-                  <span style={{ fontSize: '0.7rem', fontWeight: '700', padding: '0.1rem 0.45rem', borderRadius: '20px', background: act ? 'rgba(255,255,255,0.22)' : '#F3F4F6', color: act ? 'white' : '#9CA3AF' }}>
-                    {a.totalPersonal}
-                  </span>
-                </button>
-              )
-            })}
+          {/* ── Filtro de sectores centrado ── */}
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <p style={{ margin: '0 0 0.875rem', fontSize: '0.72rem', fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              Seleccionar sector
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {areas.map(a => {
+                const act = a.id === (sectorId ?? areas[0]?.id)
+                return (
+                  <button key={a.id} onClick={() => setSectorId(a.id)} style={{
+                    padding: '0.6rem 1.35rem', borderRadius: '100px', cursor: 'pointer', fontSize: '0.875rem',
+                    fontWeight: act ? '700' : '500',
+                    border: act ? 'none' : '1.5px solid #D1FAE5',
+                    background: act ? 'linear-gradient(135deg,#0D9488,#0F766E)' : 'white',
+                    color: act ? 'white' : '#0D9488',
+                    boxShadow: act ? '0 4px 14px rgba(13,148,136,0.35)' : '0 1px 4px rgba(0,0,0,0.05)',
+                    transition: 'all 0.15s',
+                  }}>
+                    {a.nombre}
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
           {/* ── Detalle del sector seleccionado ── */}
