@@ -42,6 +42,7 @@ export default function AreasHerramientas() {
   const [todas,         setTodas]         = useState<AreaHerramienta[]>([])
   const [cargando,      setCargando]      = useState(true)
   const [errorCarga,    setErrorCarga]    = useState(false)
+  const [errorMsg,      setErrorMsg]      = useState('')
   const [tab,           setTab]           = useState<TabArea>('todas')
   const [busqueda,      setBusqueda]      = useState('')
   const [modalAbierto,  setModalAbierto]  = useState(false)
@@ -58,7 +59,7 @@ export default function AreasHerramientas() {
     setCargando(true); setErrorCarga(false)
     const { data, error } = await supabase
       .from('herramientas_areas').select('*').order('nombre')
-    if (error) { setErrorCarga(true); setCargando(false); return }
+    if (error) { setErrorMsg(error.message || JSON.stringify(error)); setErrorCarga(true); setCargando(false); return }
     setTodas(data ?? [])
     setCargando(false)
   }
@@ -217,6 +218,24 @@ export default function AreasHerramientas() {
           </button>
         ))}
       </div>
+
+      {/* ── DIAGNÓSTICO TEMPORAL ── */}
+      {(() => {
+        const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
+        const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
+        let dominio = 'no disponible'
+        try { if (url) dominio = new URL(url).hostname } catch { dominio = 'URL inválida' }
+        return (
+          <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '8px', padding: '0.75rem 1rem', fontSize: '0.75rem', color: '#78350F', marginBottom: '0.75rem' }}>
+            <div style={{ fontWeight: '700', marginBottom: '0.4rem' }}>🔍 Diagnóstico Supabase (temporal)</div>
+            <div>VITE_SUPABASE_URL: <strong>{url ? '✅ existe' : '❌ no existe'}</strong></div>
+            <div>Dominio usado: <strong>{dominio}</strong></div>
+            <div>VITE_SUPABASE_ANON_KEY: <strong>{key ? '✅ existe' : '❌ no existe'}</strong></div>
+            {errorMsg && <div style={{ color: '#DC2626', marginTop: '0.4rem' }}>Error Supabase: <strong>{errorMsg}</strong></div>}
+            {!errorCarga && !cargando && <div style={{ color: '#15803D', marginTop: '0.4rem' }}>Consulta OK — filas devueltas: <strong>{todas.length}</strong></div>}
+          </div>
+        )
+      })()}
 
       {/* ── Lista ── */}
       {cargando ? (
