@@ -10,11 +10,19 @@ type Turno = 'manana' | 'noche'
 const TURNO_LABELS: Record<Turno, string> = { manana: '🌅 Mañana', noche: '🌙 Noche' }
 const TURNO_SIMPLE: Record<Turno, string> = { manana: 'Mañana', noche: 'Noche' }
 
+interface TurnoStatDetalle {
+  personal:     number
+  herramientas: number
+  perdidas:     number
+  solicitudes:  number
+}
+
 interface AreaConStats extends AreaHerramienta {
   totalPersonal:     number
   totalHerramientas: number
   totalPerdidas:     number
   totalSolicitudes:  number
+  turnoStats: { manana: TurnoStatDetalle; noche: TurnoStatDetalle }
 }
 
 interface Colaborador {
@@ -163,52 +171,70 @@ export default function HerramientasPersonal() {
     setCargandoAreas(true)
     const [areasRes, personalRes] = await Promise.all([
       supabase.from('herramientas_areas').select('*').eq('archivado', false).order('nombre'),
-      supabase.from('herramientas_personal').select('id, area_id').eq('activo', true),
+      supabase.from('herramientas_personal').select('id, area_id, turno').eq('activo', true),
     ])
 
     const areasRaw    = areasRes.data ?? []
-    const personalRaw = (personalRes.data ?? []) as { id: string; area_id: string | null }[]
+    const personalRaw = (personalRes.data ?? []) as { id: string; area_id: string | null; turno: string }[]
 
-    const personalPorArea = new Map<string, number>()
+    // Maps por persona
+    const turnoPorPersona  = new Map<string, Turno>()
+    const areaPorPersona   = new Map<string, string>()
+    // Sets de personal por área+turno
+    const idsPorAreaTurno  = new Map<string, { manana: Set<string>; noche: Set<string> }>()
+    const personalPorArea  = new Map<string, number>()
+
     for (const p of personalRaw) {
-      if (p.area_id) personalPorArea.set(p.area_id, (personalPorArea.get(p.area_id) ?? 0) + 1)
+      if (!p.area_id) continue
+      const t: Turno = p.turno === 'noche' ? 'noche' : 'manana'
+      turnoPorPersona.set(p.id, t)
+      areaPorPersona.set(p.id, p.area_id)
+      personalPorArea.set(p.area_id, (personalPorArea.get(p.area_id) ?? 0) + 1)
+      if (!idsPorAreaTurno.has(p.area_id)) idsPorAreaTurno.set(p.area_id, { manana: new Set(), noche: new Set() })
+      idsPorAreaTurno.get(p.area_id)![t].add(p.id)
     }
 
-    const herPorArea      = new Map<string, number>()
-    const perdidasPorArea = new Map<string, number>()
-    const solicPorArea    = new Map<string, number>()
+    const herPorPersona   = new Map<string, number>()
+    const perdPersonas     = new Set<string>()
+    const solicPorPersona = new Map<string, number>()
 
     if (personalRaw.length > 0) {
-      const ids             = personalRaw.map(p => p.id)
-      const personalAreaMap = new Map(personalRaw.map(p => [p.id, p.area_id]))
-
+      const ids = personalRaw.map(p => p.id)
       const [asigRes, perdRes, solRes] = await Promise.all([
         supabase.from('herramientas_asignaciones').select('personal_id').in('personal_id', ids).is('fecha_devolucion', null),
         supabase.from('herramientas_perdidas').select('personal_id').in('personal_id', ids).eq('estado', 'buscando'),
         supabase.from('herramientas_solicitudes').select('personal_id').in('personal_id', ids).eq('estado', 'pendiente'),
       ])
-
-      for (const a of (asigRes.data ?? []) as { personal_id: string }[]) {
-        const aId = personalAreaMap.get(a.personal_id)
-        if (aId) herPorArea.set(aId, (herPorArea.get(aId) ?? 0) + 1)
-      }
-      for (const p of (perdRes.data ?? []) as { personal_id: string }[]) {
-        const aId = personalAreaMap.get(p.personal_id)
-        if (aId) perdidasPorArea.set(aId, (perdidasPorArea.get(aId) ?? 0) + 1)
-      }
-      for (const s of (solRes.data ?? []) as { personal_id: string }[]) {
-        const aId = personalAreaMap.get(s.personal_id)
-        if (aId) solicPorArea.set(aId, (solicPorArea.get(aId) ?? 0) + 1)
-      }
+      for (const a of (asigRes.data ?? []) as { personal_id: string }[])
+        herPorPersona.set(a.personal_id, (herPorPersona.get(a.personal_id) ?? 0) + 1)
+      for (const p of (perdRes.data ?? []) as { personal_id: string }[])
+        perdPersonas.add(p.personal_id)
+      for (const s of (solRes.data ?? []) as { personal_id: string }[])
+        solicPorPersona.set(s.personal_id, (solicPorPersona.get(s.personal_id) ?? 0) + 1)
     }
 
-    setAreas(areasRaw.map(a => ({
-      ...(a as AreaHerramienta),
-      totalPersonal:     personalPorArea.get(a.id) ?? 0,
-      totalHerramientas: herPorArea.get(a.id)       ?? 0,
-      totalPerdidas:     perdidasPorArea.get(a.id)  ?? 0,
-      totalSolicitudes:  solicPorArea.get(a.id)     ?? 0,
-    })))
+    function sumTurno(ids: Set<string>): TurnoStatDetalle {
+      let her = 0, perd = 0, solic = 0
+      for (const id of ids) {
+        her   += herPorPersona.get(id)   ?? 0
+        perd  += perdPersonas.has(id)    ? 1 : 0
+        solic += solicPorPersona.get(id) ?? 0
+      }
+      return { personal: ids.size, herramientas: her, perdidas: perd, solicitudes: solic }
+    }
+
+    setAreas(areasRaw.map(a => {
+      const at = idsPorAreaTurno.get(a.id) ?? { manana: new Set<string>(), noche: new Set<string>() }
+      const ms = sumTurno(at.manana), ns = sumTurno(at.noche)
+      return {
+        ...(a as AreaHerramienta),
+        totalPersonal:     personalPorArea.get(a.id) ?? 0,
+        totalHerramientas: ms.herramientas + ns.herramientas,
+        totalPerdidas:     ms.perdidas     + ns.perdidas,
+        totalSolicitudes:  ms.solicitudes  + ns.solicitudes,
+        turnoStats: { manana: ms, noche: ns },
+      }
+    }))
     setCargandoAreas(false)
   }
 
@@ -582,73 +608,168 @@ export default function HerramientasPersonal() {
   )
 }
 
-// ── Pantalla 1: Sectores ──────────────────────────────────────────────────────
+// ── Pantalla 1: Sectores ─────────────────────────────────────────────────────
 function PantallaSectores({ areas, cargando, onEntrar }: {
   areas: AreaConStats[]; cargando: boolean; onEntrar: (a: AreaConStats, t: Turno) => void
 }) {
+  const [sectorId, setSectorId] = useState<string | null>(null)
+  const sector = areas.find(a => a.id === (sectorId ?? areas[0]?.id)) ?? null
+
   return (
-    <>
+    <div>
+      {/* ── Header ── */}
       <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ margin: 0, fontSize: '1.3rem', fontWeight: '700', color: '#111827' }}>👥 Herramientas Personal</h1>
-        <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: '#6B7280' }}>Selecciona un sector y turno para gestionar su personal</p>
+        <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '800', color: '#111827', letterSpacing: '-0.02em' }}>
+          👥 Herramientas Personal
+        </h1>
+        <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: '#9CA3AF' }}>
+          Gestión de personal por sector y turno
+        </p>
       </div>
+
       {cargando ? (
-        <p style={{ textAlign: 'center', padding: '3rem 0', color: '#9CA3AF' }}>Cargando sectores...</p>
+        <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+          <div style={{ display: 'inline-block', width: '36px', height: '36px', border: '3px solid #E5E7EB', borderTopColor: '#0D9488', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+          <p style={{ color: '#9CA3AF', marginTop: '1rem', fontSize: '0.875rem' }}>Cargando sectores...</p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+        </div>
       ) : areas.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
+        <div style={{ textAlign: 'center', padding: '4rem 1rem', background: 'white', borderRadius: '16px', border: '1.5px dashed #E5E7EB' }}>
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏗️</div>
-          <p style={{ color: '#374151', fontWeight: '600', margin: '0 0 0.5rem' }}>No hay sectores creados</p>
-          <p style={{ color: '#9CA3AF', fontSize: '0.875rem', margin: 0 }}>Primero crea un área para organizar el personal.</p>
+          <p style={{ color: '#374151', fontWeight: '700', margin: '0 0 0.4rem', fontSize: '1rem' }}>No hay sectores creados</p>
+          <p style={{ color: '#9CA3AF', fontSize: '0.85rem', margin: 0 }}>Primero crea un área en la sección de Áreas.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
-          {areas.map(a => <TarjetaSector key={a.id} area={a} onEntrar={onEntrar} />)}
-        </div>
-      )}
-    </>
-  )
-}
-
-function TarjetaSector({ area, onEntrar }: { area: AreaConStats; onEntrar: (a: AreaConStats, t: Turno) => void }) {
-  const estadoColor = area.totalPerdidas > 0 ? '#DC2626' : area.totalPersonal === 0 ? '#9CA3AF' : '#16A34A'
-  const estadoLabel = area.totalPerdidas > 0 ? 'Con faltantes' : area.totalPersonal === 0 ? 'Sin personal' : 'Sin novedades'
-  const stats = [
-    { label: 'Personal',     valor: area.totalPersonal,     icono: '👤' },
-    { label: 'Herramientas', valor: area.totalHerramientas, icono: '🔧' },
-    { label: 'Pérdidas',     valor: area.totalPerdidas,     icono: '⚠️' },
-    { label: 'Solicitudes',  valor: area.totalSolicitudes,  icono: '📋' },
-  ]
-  return (
-    <div className="area-card" style={{ background: 'white', border: '1.5px solid #E5E7EB', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-      <div style={{ background: gradienteArea(area.nombre), padding: '1.125rem 1.25rem 1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
-          <h3 style={{ margin: 0, color: 'white', fontWeight: '800', fontSize: '1.05rem', lineHeight: 1.3 }}>{area.nombre}</h3>
-          <span style={{ background: area.activo ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)', color: 'white', fontSize: '0.68rem', fontWeight: '700', padding: '0.2rem 0.55rem', borderRadius: '20px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-            {area.activo ? 'Activo' : 'Inactivo'}
-          </span>
-        </div>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-        {stats.map((s, i) => (
-          <div key={s.label} style={{ padding: '0.7rem 1rem', borderRight: i % 2 === 0 ? '1px solid #F3F4F6' : 'none', borderBottom: i < 2 ? '1px solid #F3F4F6' : 'none' }}>
-            <div style={{ fontSize: '0.7rem', color: '#9CA3AF', fontWeight: '600', marginBottom: '0.2rem' }}>{s.icono} {s.label}</div>
-            <div style={{ fontSize: '1.3rem', fontWeight: '800', lineHeight: 1, color: s.label === 'Pérdidas' && s.valor > 0 ? '#DC2626' : '#111827' }}>{s.valor}</div>
+        <>
+          {/* ── Tab bar de sectores ── */}
+          <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem', marginBottom: '1.75rem', scrollbarWidth: 'none' }}>
+            <style>{`::-webkit-scrollbar { display: none }`}</style>
+            {areas.map(a => {
+              const act = a.id === (sectorId ?? areas[0]?.id)
+              return (
+                <button key={a.id} onClick={() => setSectorId(a.id)} style={{
+                  display: 'flex', alignItems: 'center', gap: '0.45rem', whiteSpace: 'nowrap', flexShrink: 0,
+                  padding: '0.55rem 1.1rem', borderRadius: '100px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: act ? '700' : '600',
+                  border: act ? 'none' : '1.5px solid #E5E7EB',
+                  background: act ? 'linear-gradient(135deg,#0D9488,#0F766E)' : 'white',
+                  color: act ? 'white' : '#6B7280',
+                  boxShadow: act ? '0 3px 10px rgba(13,148,136,0.35)' : 'none',
+                  transition: 'all 0.15s',
+                }}>
+                  {a.nombre}
+                  <span style={{ fontSize: '0.7rem', fontWeight: '700', padding: '0.1rem 0.45rem', borderRadius: '20px', background: act ? 'rgba(255,255,255,0.22)' : '#F3F4F6', color: act ? 'white' : '#9CA3AF' }}>
+                    {a.totalPersonal}
+                  </span>
+                </button>
+              )
+            })}
           </div>
-        ))}
-      </div>
-      <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid #F3F4F6' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.625rem' }}>
-          <span style={{ fontSize: '0.73rem', fontWeight: '700', color: estadoColor, background: estadoColor + '18', padding: '0.25rem 0.6rem', borderRadius: '20px' }}>● {estadoLabel}</span>
-        </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button onClick={() => onEntrar(area, 'manana')} style={{ flex: 1, background: 'linear-gradient(135deg,#0369A1,#0284C7)', color: 'white', border: 'none', borderRadius: '8px', padding: '0.45rem 0.5rem', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer' }}>
-            🌅 Mañana →
-          </button>
-          <button onClick={() => onEntrar(area, 'noche')} style={{ flex: 1, background: 'linear-gradient(135deg,#6D28D9,#5B21B6)', color: 'white', border: 'none', borderRadius: '8px', padding: '0.45rem 0.5rem', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer' }}>
-            🌙 Noche →
-          </button>
-        </div>
-      </div>
+
+          {/* ── Detalle del sector seleccionado ── */}
+          {sector && (
+            <div>
+              {/* Cabecera del sector */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '2px solid #F3F4F6', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: gradienteArea(sector.nombre), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '1.1rem', flexShrink: 0 }}>
+                    {sector.nombre.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800', color: '#111827' }}>{sector.nombre}</h2>
+                    <p style={{ margin: '0.15rem 0 0', fontSize: '0.78rem', color: '#9CA3AF', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span>👤 {sector.totalPersonal} personas</span>
+                      <span>·</span>
+                      <span>🔧 {sector.totalHerramientas} herramientas</span>
+                      {sector.totalPerdidas > 0 && <><span>·</span><span style={{ color: '#DC2626', fontWeight: '600' }}>⚠️ {sector.totalPerdidas} pérdidas</span></>}
+                    </p>
+                  </div>
+                </div>
+                <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '0.3rem 0.75rem', borderRadius: '20px', background: sector.activo ? '#DCFCE7' : '#F3F4F6', color: sector.activo ? '#16A34A' : '#9CA3AF' }}>
+                  {sector.activo ? '● Activo' : '● Inactivo'}
+                </span>
+              </div>
+
+              {/* Tarjetas de turno */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(270px,1fr))', gap: '1.25rem' }}>
+                {(['manana', 'noche'] as Turno[]).map(turno => {
+                  const st  = sector.turnoStats[turno]
+                  const esM = turno === 'manana'
+                  const clr = esM
+                    ? { grad: 'linear-gradient(135deg,#0369A1,#0284C7)', light: '#EFF6FF', badge: '#DBEAFE', badgeTxt: '#1D4ED8' }
+                    : { grad: 'linear-gradient(135deg,#5B21B6,#7C3AED)', light: '#EDE9FE', badge: '#DDD6FE', badgeTxt: '#4C1D95' }
+                  const estadoColor = st.perdidas > 0 ? '#DC2626' : st.personal === 0 ? '#9CA3AF' : '#16A34A'
+                  const estadoLabel = st.perdidas > 0 ? 'Con faltantes' : st.personal === 0 ? 'Sin personal' : 'Sin novedades'
+
+                  return (
+                    <div key={turno} style={{ background: 'white', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '1px solid #F3F4F6' }}>
+
+                      {/* Header del turno */}
+                      <div style={{ background: clr.grad, padding: '1.125rem 1.375rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <div style={{ fontSize: '2rem', lineHeight: 1 }}>{esM ? '🌅' : '🌙'}</div>
+                          <div>
+                            <div style={{ color: 'white', fontWeight: '800', fontSize: '1.05rem', lineHeight: 1 }}>
+                              Turno {esM ? 'Mañana' : 'Noche'}
+                            </div>
+                            <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.78rem', marginTop: '0.2rem' }}>
+                              {st.personal} {st.personal === 1 ? 'persona' : 'personas'} registradas
+                            </div>
+                          </div>
+                        </div>
+                        <span style={{ background: 'rgba(255,255,255,0.18)', color: 'white', fontSize: '0.7rem', fontWeight: '700', padding: '0.25rem 0.65rem', borderRadius: '20px' }}>
+                          {sector.nombre}
+                        </span>
+                      </div>
+
+                      {/* Stats */}
+                      <div style={{ padding: '1.125rem 1.375rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem', marginBottom: '1rem' }}>
+                          {[
+                            { label: 'Personal',     val: st.personal,     ico: '👤', alerta: false },
+                            { label: 'Herramientas', val: st.herramientas, ico: '🔧', alerta: false },
+                            { label: 'Pérdidas',     val: st.perdidas,     ico: '⚠️', alerta: st.perdidas > 0 },
+                            { label: 'Solicitudes',  val: st.solicitudes,  ico: '📋', alerta: false },
+                          ].map(s => (
+                            <div key={s.label} style={{ background: s.alerta ? '#FEF2F2' : clr.light, borderRadius: '10px', padding: '0.7rem 0.875rem', border: s.alerta ? '1px solid #FECACA' : 'none' }}>
+                              <div style={{ fontSize: '0.68rem', color: s.alerta ? '#EF4444' : '#6B7280', fontWeight: '600', marginBottom: '0.25rem' }}>
+                                {s.ico} {s.label}
+                              </div>
+                              <div style={{ fontSize: '1.6rem', fontWeight: '800', color: s.alerta ? '#DC2626' : '#111827', lineHeight: 1 }}>
+                                {s.val}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Estado + Botón */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem' }}>
+                          <span style={{ fontSize: '0.73rem', fontWeight: '700', color: estadoColor, background: estadoColor + '18', padding: '0.3rem 0.75rem', borderRadius: '20px' }}>
+                            ● {estadoLabel}
+                          </span>
+                          {st.solicitudes > 0 && (
+                            <span style={{ fontSize: '0.7rem', fontWeight: '600', color: '#D97706', background: '#FEF3C7', padding: '0.25rem 0.6rem', borderRadius: '20px' }}>
+                              📋 {st.solicitudes} sol.
+                            </span>
+                          )}
+                        </div>
+
+                        <button onClick={() => onEntrar(sector, turno)} style={{
+                          width: '100%', background: clr.grad, color: 'white', border: 'none', borderRadius: '10px',
+                          padding: '0.75rem', fontSize: '0.9rem', fontWeight: '700', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                          letterSpacing: '0.01em',
+                        }}>
+                          Ingresar al turno <span style={{ fontSize: '1rem' }}>→</span>
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
