@@ -225,6 +225,10 @@ ${rankingTools.map(([nombre, count], i) => `<tr><td>${i + 1}</td><td>${nombre}</
             </div>
           ) : (
             <>
+              {/* PRUEBA DEPLOY */}
+              <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', padding: '0.4rem 0.75rem', fontSize: '0.72rem', color: '#15803D', fontWeight: '600', textAlign: 'center' }}>
+                ✅ Versión reporte actualizado — deploy confirmado
+              </div>
               {/* ── 3 tarjetas resumen ── */}
               <div>
                 <div style={sTitSec}>Estado actual del sector</div>
