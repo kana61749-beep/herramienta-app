@@ -50,12 +50,18 @@ function estadoBadgeStyle(e: Categoria): CSSProperties {
   if (e === 'descuento') return { ...base, color: '#7C3AED', background: '#EDE9FE' }
   return { ...base, color: '#D97706', background: '#FEF3C7' }
 }
+function sBtnCat(cat: Categoria): CSSProperties {
+  const c = CAT_COLORS[cat]
+  return { background: 'white', border: `1.5px solid ${c.border}`, color: c.color, borderRadius: '7px', padding: '0.35rem 0.625rem', fontSize: '0.72rem', fontWeight: '600', cursor: 'pointer' }
+}
 
 export default function ReportePersonal({ persona, areaNombre, onCerrar }: Props) {
-  const [asignaciones, setAsignaciones] = useState<AsigIncidencia[]>([])
-  const [cargando,     setCargando]     = useState(true)
-  const [categoria,    setCategoria]    = useState<Categoria>('perdida')
-  const [periodo,      setPeriodo]      = useState<Periodo>('mes')
+  const [asignaciones,    setAsignaciones]    = useState<AsigIncidencia[]>([])
+  const [cargando,        setCargando]        = useState(true)
+  const [categoriaActiva, setCategoriaActiva] = useState<Categoria | null>(null)
+  const [periodos,        setPeriodos]        = useState<Record<Categoria, Periodo>>({
+    perdida: 'mes', descuento: 'mes', reponer: 'mes',
+  })
 
   useEffect(() => { cargar() }, [])
 
@@ -105,11 +111,23 @@ export default function ReportePersonal({ persona, areaNombre, onCerrar }: Props
     .filter(a => a.fecha_reporte && a.fecha_reporte >= mesStr())
     .reduce((acc, a) => acc + a.monto_descuento, 0)
 
-  const categoriaItems = categoria === 'perdida' ? incPerdidas : categoria === 'descuento' ? incDescuentos : incReponer
-  const listaFiltrada  = categoriaItems.filter(a => a.fecha_reporte && a.fecha_reporte >= startOf(periodo))
+  function toggleCategoria(cat: Categoria) {
+    setCategoriaActiva(prev => prev === cat ? null : cat)
+  }
+  function cambiarPeriodo(cat: Categoria, p: Periodo) {
+    setPeriodos(prev => ({ ...prev, [cat]: p }))
+  }
+
+  function itemsDeCat(cat: Categoria) {
+    return cat === 'perdida' ? incPerdidas : cat === 'descuento' ? incDescuentos : incReponer
+  }
+  function listaFiltradaDe(cat: Categoria) {
+    return itemsDeCat(cat).filter(a => a.fecha_reporte && a.fecha_reporte >= startOf(periodos[cat]))
+  }
 
   const hoy = new Date().toISOString().split('T')[0]
 
+  // ── PDF general (3 categorías) ──────────────────────────────────────────────
   function generarPDF() {
     const win = window.open('', '_blank')
     if (!win) return
@@ -155,6 +173,7 @@ ${incReponer.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFec
     win.document.close(); win.print()
   }
 
+  // ── WhatsApp general ─────────────────────────────────────────────────────────
   function compartirWhatsApp() {
     const lineas = [
       `📊 *Reporte — ${persona.nombre}*`,
@@ -167,13 +186,65 @@ ${incReponer.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFec
     window.open(`https://wa.me/?text=${encodeURIComponent(lineas.join('\n'))}`, '_blank')
   }
 
+  // ── PDF por categoría ────────────────────────────────────────────────────────
+  function generarPDFCategoria(cat: Categoria) {
+    const p = periodos[cat]
+    const items = listaFiltradaDe(cat)
+    const win = window.open('', '_blank')
+    if (!win) return
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>${CAT_LABELS[cat]} — ${persona.nombre}</title>
+<style>
+body{font-family:Arial,sans-serif;padding:2rem;color:#111;max-width:700px;margin:0 auto}
+h1{color:#7C3AED;margin-bottom:0.25rem}
+h2{color:#374151;font-size:1rem;border-bottom:2px solid #E5E7EB;padding-bottom:0.4rem;margin-top:1.5rem}
+table{width:100%;border-collapse:collapse;font-size:0.85rem;margin-top:0.5rem}
+th{background:#F9FAFB;text-align:left;padding:0.5rem;border:1px solid #E5E7EB;font-weight:600}
+td{padding:0.5rem;border:1px solid #E5E7EB}
+.pie{margin-top:2rem;font-size:0.75rem;color:#9CA3AF;border-top:1px solid #E5E7EB;padding-top:1rem}
+</style></head><body>
+<h1>📊 ${CAT_LABELS[cat]} — ${PERIODO_LABELS[p]}</h1>
+<p style="color:#6B7280;margin-top:0">Colaborador: <strong>${persona.nombre}</strong> &nbsp;·&nbsp; Sector: <strong>${areaNombre ?? '—'}</strong> &nbsp;·&nbsp; Fecha: <strong>${formatFecha(hoy)}</strong></p>
+<h2>${CAT_LABELS[cat]} · ${PERIODO_LABELS[p]} (${items.length})</h2>
+${items.length === 0
+  ? '<p style="color:#9CA3AF">Sin registros en este período.</p>'
+  : cat === 'descuento'
+    ? `<table><tr><th>Herramienta</th><th>Fecha</th><th>Monto</th></tr>
+${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFecha(a.fecha_reporte) : '—'}</td><td>${formatBs(a.monto_descuento)}</td></tr>`).join('')}</table>`
+    : `<table><tr><th>Herramienta</th><th>Fecha</th><th>${cat === 'reponer' ? 'Precio ref.' : 'Estado'}</th></tr>
+${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFecha(a.fecha_reporte) : '—'}</td><td>${cat === 'reponer' ? formatBs(a.precio ?? 0) : 'Activa'}</td></tr>`).join('')}</table>`}
+<div class="pie">Generado el ${formatFecha(hoy)} · Sistema de Herramientas</div>
+</body></html>`)
+    win.document.close(); win.print()
+  }
+
+  // ── WhatsApp por categoría ───────────────────────────────────────────────────
+  function compartirWhatsAppCategoria(cat: Categoria) {
+    const p = periodos[cat]
+    const items = listaFiltradaDe(cat)
+    const lineas = [
+      `📊 *${CAT_LABELS[cat]} — ${PERIODO_LABELS[p]}*`,
+      `${persona.nombre} | ${areaNombre ?? '—'} | ${formatFecha(hoy)}`,
+      '',
+      items.length === 0
+        ? 'Sin registros en este período.'
+        : items.map(a =>
+            `• ${a.nombre} — ${a.fecha_reporte ? formatFecha(a.fecha_reporte) : 'Sin fecha'}` +
+            (cat === 'descuento' ? ` — ${formatBs(a.monto_descuento)}` : '') +
+            (cat === 'reponer' && a.precio ? ` — ref. ${formatBs(a.precio)}` : '')
+          ).join('\n'),
+    ]
+    window.open(`https://wa.me/?text=${encodeURIComponent(lineas.join('\n'))}`, '_blank')
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <>
       <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 3000, backdropFilter: 'blur(2px)', animation: 'panelFade 0.18s ease' }} />
       <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(520px,100vw)', background: 'white', zIndex: 3001, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 40px rgba(0,0,0,0.2)', animation: 'panelSlide 0.22s cubic-bezier(0.32,0.72,0,1)' }}>
         <style>{`@keyframes panelFade{from{opacity:0}to{opacity:1}} @keyframes panelSlide{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
 
-        {/* Header */}
+        {/* Header — PDF general / WhatsApp general */}
         <div style={{ background: 'linear-gradient(135deg,#7C3AED,#6D28D9)', padding: '1.25rem 1.5rem', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.875rem' }}>
             <div>
@@ -183,8 +254,8 @@ ${incReponer.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFec
             <button onClick={onCerrar} style={sBtnX}>✕</button>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button onClick={generarPDF} style={sBtnHdr}>🖨️ PDF</button>
-            <button onClick={compartirWhatsApp} style={sBtnHdr}>📱 WhatsApp</button>
+            <button onClick={generarPDF} style={sBtnHdr}>🖨️ PDF general</button>
+            <button onClick={compartirWhatsApp} style={sBtnHdr}>📱 WhatsApp general</button>
           </div>
         </div>
 
@@ -194,13 +265,28 @@ ${incReponer.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFec
             <p style={{ textAlign: 'center', padding: '2rem', color: '#9CA3AF' }}>Cargando reporte...</p>
           ) : (
             <>
-              {/* ── 3 tarjetas resumen ── */}
+              {/* ── Estado actual: tarjetas clicables ── */}
               <div>
                 <div style={sTitSec}>Estado actual</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.5rem', marginTop: '0.625rem' }}>
-                  <StatCard val={incPerdidas.length}   label="⚠️ Pérdidas"   bg="#FEE2E2" border="#FECACA" color="#DC2626" />
-                  <StatCard val={incDescuentos.length}  label="💸 Descuentos"  bg="#EDE9FE" border="#DDD6FE" color="#7C3AED" />
-                  <StatCard val={incReponer.length}     label="🔄 Reponer"     bg="#FEF3C7" border="#FDE68A" color="#D97706" />
+                  <StatCard
+                    val={incPerdidas.length} label="⚠️ Pérdidas"
+                    bg="#FEE2E2" border="#FECACA" color="#DC2626"
+                    activo={categoriaActiva === 'perdida'}
+                    onClick={() => toggleCategoria('perdida')}
+                  />
+                  <StatCard
+                    val={incDescuentos.length} label="💸 Descuentos"
+                    bg="#EDE9FE" border="#DDD6FE" color="#7C3AED"
+                    activo={categoriaActiva === 'descuento'}
+                    onClick={() => toggleCategoria('descuento')}
+                  />
+                  <StatCard
+                    val={incReponer.length} label="🔄 Reponer"
+                    bg="#FEF3C7" border="#FDE68A" color="#D97706"
+                    activo={categoriaActiva === 'reponer'}
+                    onClick={() => toggleCategoria('reponer')}
+                  />
                 </div>
                 {totalDescuentosMes > 0 && (
                   <div style={{ marginTop: '0.5rem', padding: '0.625rem 0.875rem', background: '#EDE9FE', border: '1px solid #DDD6FE', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -210,61 +296,58 @@ ${incReponer.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFec
                 )}
               </div>
 
-              {/* ── Filtro combinado ── */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <div style={sTitSec}>Ver por categoría y período</div>
-                <div style={{ display: 'flex', gap: '0.375rem' }}>
-                  {(['perdida', 'descuento', 'reponer'] as Categoria[]).map(cat => {
-                    const c = CAT_COLORS[cat]
-                    const activo = categoria === cat
-                    return (
-                      <button key={cat} onClick={() => setCategoria(cat)} style={{
-                        flex: 1, padding: '0.5rem 0.25rem', borderRadius: '8px',
-                        border: `1.5px solid ${activo ? c.activeBg : c.border}`,
-                        background: activo ? c.activeBg : c.bg,
-                        color: activo ? c.activeColor : c.color,
-                        fontWeight: '700', fontSize: '0.75rem', cursor: 'pointer',
-                      }}>
-                        {CAT_LABELS[cat]}
-                      </button>
-                    )
-                  })}
-                </div>
-                <div style={{ display: 'flex', gap: '0.375rem' }}>
-                  {(['semana', 'mes', 'anio'] as Periodo[]).map(p => {
-                    const activo = periodo === p
-                    return (
-                      <button key={p} onClick={() => setPeriodo(p)} style={{
-                        flex: 1, padding: '0.375rem 0.25rem', borderRadius: '6px',
-                        border: `1px solid ${activo ? '#374151' : '#E5E7EB'}`,
-                        background: activo ? '#374151' : '#F9FAFB',
-                        color: activo ? 'white' : '#6B7280',
-                        fontWeight: '600', fontSize: '0.75rem', cursor: 'pointer',
-                      }}>
-                        {PERIODO_LABELS[p]}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
+              {/* ── Sección expandida de la categoría activa ── */}
+              {categoriaActiva && (() => {
+                const c = CAT_COLORS[categoriaActiva]
+                const lista = listaFiltradaDe(categoriaActiva)
+                const p = periodos[categoriaActiva]
+                return (
+                  <div style={{ border: `1.5px solid ${c.border}`, borderRadius: '12px', padding: '1rem', background: c.bg }}>
+                    {/* Título + botones PDF/WhatsApp de categoría */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                      <span style={{ fontWeight: '700', fontSize: '0.85rem', color: c.color }}>{CAT_LABELS[categoriaActiva]}</span>
+                      <div style={{ display: 'flex', gap: '0.375rem' }}>
+                        <button onClick={() => generarPDFCategoria(categoriaActiva)} style={sBtnCat(categoriaActiva)}>🖨️ PDF</button>
+                        <button onClick={() => compartirWhatsAppCategoria(categoriaActiva)} style={sBtnCat(categoriaActiva)}>📱 WhatsApp</button>
+                      </div>
+                    </div>
 
-              {/* ── Lista filtrada ── */}
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <div style={sTitSec}>{CAT_LABELS[categoria]} · {PERIODO_LABELS[periodo]}</div>
-                  <span style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>{listaFiltrada.length} registro{listaFiltrada.length !== 1 ? 's' : ''}</span>
-                </div>
-                {listaFiltrada.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '1.5rem 1rem', background: '#F9FAFB', borderRadius: '10px', border: '1.5px dashed #E5E7EB' }}>
-                    <div style={{ fontSize: '1.5rem', marginBottom: '0.375rem' }}>📭</div>
-                    <p style={{ color: '#6B7280', fontWeight: '600', margin: 0, fontSize: '0.85rem' }}>Sin registros en este período</p>
+                    {/* Filtros de período — independientes por categoría */}
+                    <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '0.75rem' }}>
+                      {(['semana', 'mes', 'anio'] as Periodo[]).map(per => {
+                        const activo = p === per
+                        return (
+                          <button key={per} onClick={() => cambiarPeriodo(categoriaActiva, per)} style={{
+                            flex: 1, padding: '0.375rem 0.25rem', borderRadius: '6px',
+                            border: `1px solid ${activo ? c.activeBg : '#E5E7EB'}`,
+                            background: activo ? c.activeBg : 'white',
+                            color: activo ? c.activeColor : '#6B7280',
+                            fontWeight: '600', fontSize: '0.75rem', cursor: 'pointer',
+                          }}>
+                            {PERIODO_LABELS[per]}
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    {/* Lista filtrada */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
+                      <div style={sTitSec}>{CAT_LABELS[categoriaActiva]} · {PERIODO_LABELS[p]}</div>
+                      <span style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>{lista.length} registro{lista.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    {lista.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '1.25rem', background: 'white', borderRadius: '8px', border: '1px dashed #E5E7EB' }}>
+                        <div style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>📭</div>
+                        <p style={{ color: '#6B7280', fontWeight: '600', margin: 0, fontSize: '0.82rem' }}>Sin registros en este período</p>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                        {lista.map(item => <ItemCard key={item.asignacion_id} item={item} />)}
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                    {listaFiltrada.map(item => <ItemCard key={item.asignacion_id} item={item} />)}
-                  </div>
-                )}
-              </div>
+                )
+              })()}
 
               {asignaciones.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '2.5rem 1rem', background: '#F9FAFB', borderRadius: '12px', border: '1.5px dashed #E5E7EB' }}>
@@ -288,9 +371,8 @@ ${incReponer.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFec
 
 // ── Sub-componentes ───────────────────────────────────────────────────────────
 function ItemCard({ item, subtitulo }: { item: AsigIncidencia; subtitulo?: string }) {
-  const c = CAT_COLORS[item.estado]
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.625rem 0.875rem', border: `1px solid ${c.border}`, borderRadius: '8px', background: c.bg, gap: '0.5rem' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.625rem 0.875rem', border: '1px solid rgba(0,0,0,0.06)', borderRadius: '8px', background: 'white', gap: '0.5rem' }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: '600', fontSize: '0.85rem', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.nombre}</div>
         <div style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: '0.1rem' }}>
@@ -310,20 +392,34 @@ function ItemCard({ item, subtitulo }: { item: AsigIncidencia; subtitulo?: strin
   )
 }
 
-function StatCard({ val, label, bg, border, color }: { val: number; label: string; bg: string; border: string; color: string }) {
+function StatCard({ val, label, bg, border, color, activo, onClick }: {
+  val: number; label: string; bg: string; border: string; color: string
+  activo?: boolean; onClick?: () => void
+}) {
   return (
-    <div style={{ background: bg, border: `1px solid ${border}`, borderRadius: '10px', padding: '0.625rem', textAlign: 'center' }}>
-      <div style={{ fontSize: '1.4rem', fontWeight: '800', color }}>{val}</div>
-      <div style={{ fontSize: '0.68rem', color, opacity: 0.8, marginTop: '0.15rem' }}>{label}</div>
+    <div
+      onClick={onClick}
+      style={{
+        background: activo ? color : bg,
+        border: `${activo ? '2px' : '1px'} solid ${activo ? color : border}`,
+        borderRadius: '10px', padding: '0.625rem', textAlign: 'center',
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'all 0.15s',
+        userSelect: 'none',
+      }}
+    >
+      <div style={{ fontSize: '1.4rem', fontWeight: '800', color: activo ? 'white' : color }}>{val}</div>
+      <div style={{ fontSize: '0.68rem', color: activo ? 'rgba(255,255,255,0.85)' : color, opacity: activo ? 1 : 0.8, marginTop: '0.15rem' }}>{label}</div>
+      <div style={{ fontSize: '0.6rem', marginTop: '0.2rem', color: activo ? 'rgba(255,255,255,0.65)' : color, opacity: 0.6 }}>
+        {activo ? '▲ cerrar' : '▼ ver'}
+      </div>
     </div>
   )
 }
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 const CAT_LABELS: Record<Categoria, string> = {
-  perdida:   'Pérdidas',
-  descuento: 'Descuentos',
-  reponer:   'Para reponer',
+  perdida: 'Pérdidas', descuento: 'Descuentos', reponer: 'Para reponer',
 }
 const CAT_COLORS: Record<Categoria, { bg: string; border: string; color: string; activeBg: string; activeColor: string }> = {
   perdida:   { bg: '#FEF2F2', border: '#FECACA', color: '#DC2626', activeBg: '#DC2626', activeColor: 'white' },
