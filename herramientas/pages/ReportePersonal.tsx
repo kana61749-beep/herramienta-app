@@ -16,6 +16,15 @@ interface AsigIncidencia {
   fecha_reporte: string | null
 }
 
+interface RevisionHist {
+  id: string
+  fecha_revision: string
+  fecha_esperada: string | null
+  dias_retraso: number
+  observaciones: string | null
+  detalles: { nombre: string; resultado: 'tiene' | 'perdida' | 'reponer' | 'descuento' }[]
+}
+
 type Categoria = 'perdida' | 'descuento' | 'reponer'
 type Periodo   = 'semana' | 'mes' | 'anio'
 
@@ -74,8 +83,14 @@ export default function ReportePersonal({ persona, areaNombre, onCerrar }: Props
   const [periodos,        setPeriodos]        = useState<Record<Categoria, Periodo>>({
     perdida: 'mes', descuento: 'mes', reponer: 'mes',
   })
+  const [historialAbierto, setHistorialAbierto] = useState(false)
+  const [revisiones,       setRevisiones]       = useState<RevisionHist[]>([])
+  const [cargandoHist,     setCargandoHist]     = useState(false)
+  const [periodoHist,      setPeriodoHist]      = useState<Periodo>('mes')
+  const [confirmElim,      setConfirmElim]      = useState<Periodo | null>(null)
 
   useEffect(() => { cargar() }, [])
+  useEffect(() => { if (historialAbierto) cargarHistorial() }, [periodoHist, historialAbierto]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function cargar() {
     setCargando(true)
@@ -113,6 +128,54 @@ export default function ReportePersonal({ persona, areaNombre, onCerrar }: Props
       })
     )
     setCargando(false)
+  }
+
+  async function cargarHistorial() {
+    setCargandoHist(true)
+    const { data } = await supabase
+      .from('herramientas_revisiones')
+      .select(`id, fecha_revision, dias_retraso, fecha_esperada, observaciones,
+        herramientas_revision_detalle(resultado,
+          herramientas_asignaciones(herramientas_items(nombre)))`)
+      .eq('personal_id', persona.id)
+      .eq('tipo', 'personal')
+      .gte('fecha_revision', startOf(periodoHist))
+      .order('fecha_revision', { ascending: false })
+
+    setRevisiones(
+      ((data ?? []) as Record<string, unknown>[]).map(r => ({
+        id: r.id as string,
+        fecha_revision: r.fecha_revision as string,
+        fecha_esperada: r.fecha_esperada as string | null,
+        dias_retraso: (r.dias_retraso as number) ?? 0,
+        observaciones: r.observaciones as string | null,
+        detalles: ((r.herramientas_revision_detalle as Record<string, unknown>[]) ?? []).map(d => {
+          const asig = d.herramientas_asignaciones as { herramientas_items: { nombre: string } | null } | null
+          return {
+            nombre: asig?.herramientas_items?.nombre ?? 'Herramienta',
+            resultado: d.resultado as 'tiene' | 'perdida' | 'reponer' | 'descuento',
+          }
+        }),
+      }))
+    )
+    setCargandoHist(false)
+  }
+
+  async function eliminarHistorial(p: Periodo) {
+    const { data: revs } = await supabase
+      .from('herramientas_revisiones')
+      .select('id')
+      .eq('personal_id', persona.id)
+      .eq('tipo', 'personal')
+      .gte('fecha_revision', startOf(p))
+
+    const ids = (revs ?? []).map((r: Record<string, unknown>) => r.id as string)
+    if (ids.length > 0) {
+      await supabase.from('herramientas_revision_detalle').delete().in('revision_id', ids)
+      await supabase.from('herramientas_revisiones').delete().in('id', ids)
+    }
+    setConfirmElim(null)
+    await cargarHistorial()
   }
 
   const incPerdidas   = asignaciones.filter(a => a.estado === 'perdida')
@@ -259,7 +322,7 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFecha(a.
       <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(520px,100vw)', background: 'white', zIndex: 3001, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 40px rgba(0,0,0,0.2)', animation: 'panelSlide 0.22s cubic-bezier(0.32,0.72,0,1)' }}>
         <style>{`@keyframes panelFade{from{opacity:0}to{opacity:1}} @keyframes panelSlide{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
 
-        {/* Header — PDF general / WhatsApp general */}
+        {/* Header */}
         <div style={{ background: 'linear-gradient(135deg,#7C3AED,#6D28D9)', padding: '1.25rem 1.5rem', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.875rem' }}>
             <div>
@@ -270,12 +333,187 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFecha(a.
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button onClick={generarPDF} style={sBtnHdr}>🖨️ PDF general</button>
-            <button onClick={compartirWhatsApp} style={sBtnHdr}>📱 WhatsApp general</button>
+            <button onClick={compartirWhatsApp} style={sBtnHdr}>📱 WhatsApp</button>
+            <button
+              onClick={() => setHistorialAbierto(h => !h)}
+              style={{ ...sBtnHdr, background: historialAbierto ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.15)', flex: '0 0 auto' }}
+            >
+              📋 Historial
+            </button>
           </div>
         </div>
 
         {/* Body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+          {/* ── Historial de revisiones ── */}
+          {historialAbierto && (
+            <div style={{ border: '1.5px solid #A78BFA', borderRadius: '12px', padding: '1rem', background: '#FAF5FF' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                <span style={{ fontWeight: '700', fontSize: '0.9rem', color: '#7C3AED' }}>📋 Historial de revisiones</span>
+                <button onClick={() => setHistorialAbierto(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', fontSize: '1rem', padding: '0.125rem 0.25rem', lineHeight: 1 }}>✕</button>
+              </div>
+
+              {/* Filtro período */}
+              <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '0.75rem' }}>
+                {(['semana', 'mes', 'anio'] as Periodo[]).map(per => {
+                  const activo = periodoHist === per
+                  return (
+                    <button key={per} onClick={() => setPeriodoHist(per)} style={{
+                      flex: 1, padding: '0.375rem 0.25rem', borderRadius: '6px',
+                      border: `1px solid ${activo ? '#7C3AED' : '#E5E7EB'}`,
+                      background: activo ? '#7C3AED' : 'white',
+                      color: activo ? 'white' : '#6B7280',
+                      fontWeight: '600', fontSize: '0.75rem', cursor: 'pointer',
+                    }}>
+                      {PERIODO_LABELS[per]}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {cargandoHist ? (
+                <p style={{ textAlign: 'center', color: '#9CA3AF', fontSize: '0.82rem', padding: '1rem 0', margin: 0 }}>Cargando historial...</p>
+              ) : revisiones.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '1.25rem', background: 'white', borderRadius: '8px', border: '1px dashed #DDD6FE' }}>
+                  <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>📭</div>
+                  <p style={{ color: '#9CA3AF', fontWeight: '600', margin: 0, fontSize: '0.82rem' }}>Sin revisiones en este período</p>
+                </div>
+              ) : (() => {
+                const puntuales  = revisiones.filter(r => r.dias_retraso === 0).length
+                const conRetraso = revisiones.filter(r => r.dias_retraso > 0).length
+                const sumRetraso = revisiones.filter(r => r.dias_retraso > 0).reduce((s, r) => s + r.dias_retraso, 0)
+                const promRetraso = conRetraso > 0 ? Math.round(sumRetraso / conRetraso) : 0
+                const totalPerdidas   = revisiones.reduce((s, r) => s + r.detalles.filter(d => d.resultado === 'perdida').length, 0)
+                const totalDescuentos = revisiones.reduce((s, r) => s + r.detalles.filter(d => d.resultado === 'descuento').length, 0)
+                const totalReponer    = revisiones.reduce((s, r) => s + r.detalles.filter(d => d.resultado === 'reponer').length, 0)
+
+                const conteoPerds = new Map<string, number>()
+                for (const rev of revisiones) {
+                  for (const d of rev.detalles.filter(x => x.resultado === 'perdida')) {
+                    conteoPerds.set(d.nombre, (conteoPerds.get(d.nombre) ?? 0) + 1)
+                  }
+                }
+                const rankPerds = Array.from(conteoPerds.entries()).sort((a, b) => b[1] - a[1]).slice(0, 3)
+
+                return (
+                  <>
+                    {/* Resumen */}
+                    <div style={{ background: 'white', borderRadius: '10px', padding: '0.75rem', marginBottom: '0.75rem', border: '1px solid #DDD6FE' }}>
+                      <div style={sTitSec2}>Resumen — {PERIODO_LABELS[periodoHist]}</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.375rem', marginTop: '0.5rem' }}>
+                        <MiniStat label="Total revs." val={revisiones.length} color="#374151" />
+                        <MiniStat label="✅ Puntuales" val={puntuales} color="#059669" />
+                        <MiniStat label="⚠️ Retraso" val={conRetraso} color="#DC2626" />
+                        <MiniStat label="Pérdidas" val={totalPerdidas} color="#DC2626" />
+                        <MiniStat label="Descuentos" val={totalDescuentos} color="#7C3AED" />
+                        <MiniStat label="Reponer" val={totalReponer} color="#D97706" />
+                      </div>
+                      {conRetraso > 0 && (
+                        <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#6B7280' }}>
+                          Promedio retraso: <strong style={{ color: '#DC2626' }}>{promRetraso} día{promRetraso !== 1 ? 's' : ''}</strong>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Herramientas más perdidas */}
+                    {rankPerds.length > 0 && (
+                      <div style={{ background: 'white', borderRadius: '10px', padding: '0.75rem', marginBottom: '0.75rem', border: '1px solid #FECACA' }}>
+                        <div style={sTitSec2Rojo}>🔧 Herramientas más perdidas</div>
+                        {rankPerds.map(([nombre, count], i) => (
+                          <div key={nombre} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.25rem 0', borderTop: i > 0 ? '1px solid #FEF2F2' : 'none', marginTop: i > 0 ? '0.25rem' : '0.375rem' }}>
+                            <span style={{ fontSize: '0.72rem', fontWeight: '800', color: '#DC2626', minWidth: '16px' }}>{i + 1}.</span>
+                            <span style={{ flex: 1, fontSize: '0.8rem', color: '#374151' }}>{nombre}</span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#DC2626' }}>{count}×</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Detalle de revisiones */}
+                    <div style={sTitSec}>Detalle de revisiones</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.375rem' }}>
+                      {revisiones.map(rev => {
+                        const puntual   = rev.dias_retraso === 0
+                        const perdEnRev = rev.detalles.filter(d => d.resultado === 'perdida')
+                        const descEnRev = rev.detalles.filter(d => d.resultado === 'descuento')
+                        const repEnRev  = rev.detalles.filter(d => d.resultado === 'reponer')
+                        return (
+                          <div key={rev.id} style={{ background: 'white', borderRadius: '10px', padding: '0.75rem', border: `1px solid ${puntual ? '#D1FAE5' : '#FECACA'}` }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                              <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#374151' }}>
+                                📅 {formatFecha(rev.fecha_revision)}
+                              </span>
+                              <span style={{
+                                fontSize: '0.7rem', fontWeight: '700',
+                                padding: '0.15rem 0.5rem', borderRadius: '20px',
+                                color: puntual ? '#059669' : '#DC2626',
+                                background: puntual ? '#D1FAE5' : '#FEE2E2',
+                                whiteSpace: 'nowrap' as const,
+                              }}>
+                                {puntual ? '✅ Puntual' : `⚠️ ${rev.dias_retraso} día${rev.dias_retraso !== 1 ? 's' : ''} retraso`}
+                              </span>
+                            </div>
+                            {rev.fecha_esperada && (
+                              <div style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>
+                                Esperada: {formatFecha(rev.fecha_esperada)}
+                              </div>
+                            )}
+                            {(perdEnRev.length > 0 || descEnRev.length > 0 || repEnRev.length > 0) && (
+                              <div style={{ marginTop: '0.375rem', display: 'flex', flexWrap: 'wrap' as const, gap: '0.25rem' }}>
+                                {perdEnRev.length > 0 && <span style={{ fontSize: '0.68rem', color: '#DC2626', background: '#FEE2E2', padding: '0.1rem 0.4rem', borderRadius: '12px' }}>⚠️ {perdEnRev.length} pérdida{perdEnRev.length !== 1 ? 's' : ''}</span>}
+                                {descEnRev.length > 0 && <span style={{ fontSize: '0.68rem', color: '#7C3AED', background: '#EDE9FE', padding: '0.1rem 0.4rem', borderRadius: '12px' }}>💸 {descEnRev.length} descuento{descEnRev.length !== 1 ? 's' : ''}</span>}
+                                {repEnRev.length  > 0 && <span style={{ fontSize: '0.68rem', color: '#D97706', background: '#FEF3C7', padding: '0.1rem 0.4rem', borderRadius: '12px' }}>🔄 {repEnRev.length} reponer</span>}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </>
+                )
+              })()}
+
+              {/* Botones eliminar historial */}
+              <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid #DDD6FE' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: '0.5rem' }}>
+                  Eliminar historial
+                </div>
+                <div style={{ display: 'flex', gap: '0.375rem' }}>
+                  {(['semana', 'mes', 'anio'] as Periodo[]).map(per => (
+                    <button key={per} onClick={() => setConfirmElim(per)} style={{
+                      flex: 1, padding: '0.375rem 0.2rem', borderRadius: '6px',
+                      border: '1px solid #FECACA', background: 'white',
+                      color: '#DC2626', fontWeight: '600', fontSize: '0.7rem', cursor: 'pointer',
+                    }}>
+                      🗑️ {PERIODO_LABELS[per]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Modal confirmación eliminación */}
+              {confirmElim !== null && (
+                <div style={{ marginTop: '0.75rem', background: '#FEF2F2', border: '1.5px solid #FECACA', borderRadius: '10px', padding: '0.875rem' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#DC2626', marginBottom: '0.375rem' }}>
+                    ¿Eliminar historial de esta {PERIODO_LABELS[confirmElim].toLowerCase()}?
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#6B7280', marginBottom: '0.75rem' }}>
+                    Se borrarán las revisiones y su detalle. No se elimina personal ni herramientas.
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button onClick={() => setConfirmElim(null)} style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: '1px solid #E5E7EB', background: 'white', color: '#374151', fontWeight: '600', fontSize: '0.78rem', cursor: 'pointer' }}>
+                      Cancelar
+                    </button>
+                    <button onClick={() => { if (confirmElim) eliminarHistorial(confirmElim) }} style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: 'none', background: '#DC2626', color: 'white', fontWeight: '700', fontSize: '0.78rem', cursor: 'pointer' }}>
+                      Sí, eliminar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {cargando ? (
             <p style={{ textAlign: 'center', padding: '2rem', color: '#9CA3AF' }}>Cargando reporte...</p>
           ) : (
@@ -318,7 +556,6 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFecha(a.
                 const p = periodos[categoriaActiva]
                 return (
                   <div style={{ border: `1.5px solid ${c.border}`, borderRadius: '12px', padding: '1rem', background: c.bg }}>
-                    {/* Título + botones PDF/WhatsApp de categoría */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                       <span style={{ fontWeight: '700', fontSize: '0.85rem', color: c.color }}>{CAT_LABELS[categoriaActiva]}</span>
                       <div style={{ display: 'flex', gap: '0.375rem' }}>
@@ -327,7 +564,6 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFecha(a.
                       </div>
                     </div>
 
-                    {/* Filtros de período — independientes por categoría */}
                     <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '0.75rem' }}>
                       {(['semana', 'mes', 'anio'] as Periodo[]).map(per => {
                         const activo = p === per
@@ -345,7 +581,6 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFecha(a.
                       })}
                     </div>
 
-                    {/* Lista filtrada */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
                       <div style={sTitSec}>{CAT_LABELS[categoriaActiva]} · {PERIODO_LABELS[p]}</div>
                       <span style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>{lista.length} registro{lista.length !== 1 ? 's' : ''}</span>
@@ -432,6 +667,15 @@ function StatCard({ val, label, bg, border, color, activo, onClick }: {
   )
 }
 
+function MiniStat({ label, val, color }: { label: string; val: number; color: string }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '0.375rem 0.25rem', background: '#FAFAFA', borderRadius: '6px' }}>
+      <div style={{ fontSize: '1.1rem', fontWeight: '800', color }}>{val}</div>
+      <div style={{ fontSize: '0.62rem', color: '#9CA3AF', marginTop: '0.1rem' }}>{label}</div>
+    </div>
+  )
+}
+
 // ── Constantes ────────────────────────────────────────────────────────────────
 const CAT_LABELS: Record<Categoria, string> = {
   perdida: 'Pérdidas', descuento: 'Descuentos', reponer: 'Para reponer',
@@ -444,7 +688,9 @@ const CAT_COLORS: Record<Categoria, { bg: string; border: string; color: string;
 const PERIODO_LABELS: Record<Periodo, string> = { semana: 'Semana', mes: 'Mes', anio: 'Año' }
 
 // ── Estilos ───────────────────────────────────────────────────────────────────
-const sTitSec: CSSProperties = { fontSize: '0.75rem', fontWeight: '700', color: '#374151', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }
-const sBtnX:   CSSProperties = { background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', color: 'white', borderRadius: '8px', padding: '0.375rem 0.5rem', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, flexShrink: 0 }
-const sBtnHdr: CSSProperties = { flex: 1, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', borderRadius: '8px', padding: '0.45rem 0.75rem', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }
-const sBtnSec: CSSProperties = { background: 'white', color: '#374151', border: '1.5px solid #E5E7EB', borderRadius: '8px', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer', width: '100%' }
+const sTitSec:     CSSProperties = { fontSize: '0.75rem', fontWeight: '700', color: '#374151', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }
+const sTitSec2:    CSSProperties = { fontSize: '0.72rem', fontWeight: '700', color: '#7C3AED', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }
+const sTitSec2Rojo: CSSProperties = { fontSize: '0.72rem', fontWeight: '700', color: '#DC2626', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }
+const sBtnX:       CSSProperties = { background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', color: 'white', borderRadius: '8px', padding: '0.375rem 0.5rem', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, flexShrink: 0 }
+const sBtnHdr:     CSSProperties = { flex: 1, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', borderRadius: '8px', padding: '0.45rem 0.75rem', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }
+const sBtnSec:     CSSProperties = { background: 'white', color: '#374151', border: '1.5px solid #E5E7EB', borderRadius: '8px', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer', width: '100%' }
