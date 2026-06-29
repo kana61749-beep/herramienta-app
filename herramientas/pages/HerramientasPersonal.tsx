@@ -605,6 +605,7 @@ export default function HerramientasPersonal() {
           persona={reportePersona}
           areaNombre={areaNombreTurno}
           onCerrar={() => setReportePersona(null)}
+          onRefresh={() => { if (areaActiva) { cargarPersonal(areaActiva.id, turnoActivo); cargarAreas() } }}
         />
       )}
 

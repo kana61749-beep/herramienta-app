@@ -5,6 +5,7 @@ interface Props {
   persona: { id: string; nombre: string; foto_url: string | null }
   areaNombre: string | null
   onCerrar: () => void
+  onRefresh?: () => void
 }
 
 interface AsigIncidencia {
@@ -69,7 +70,7 @@ function sBtnCat(cat: Categoria): CSSProperties {
   return { background: 'white', border: `1.5px solid ${c.border}`, color: c.color, borderRadius: '7px', padding: '0.35rem 0.625rem', fontSize: '0.72rem', fontWeight: '600', cursor: 'pointer' }
 }
 
-export default function ReportePersonal({ persona, areaNombre, onCerrar }: Props) {
+export default function ReportePersonal({ persona, areaNombre, onCerrar, onRefresh }: Props) {
   const [asignaciones,    setAsignaciones]    = useState<AsigIncidencia[]>([])
   const [cargando,        setCargando]        = useState(true)
   const [categoriaActiva, setCategoriaActiva] = useState<Categoria | null>(null)
@@ -81,6 +82,8 @@ export default function ReportePersonal({ persona, areaNombre, onCerrar }: Props
   const [cargandoHist,     setCargandoHist]     = useState(false)
   const [periodoHist,      setPeriodoHist]      = useState<Periodo>('mes')
   const [confirmElim,      setConfirmElim]      = useState<Periodo | null>(null)
+  const [eliminando,       setEliminando]       = useState(false)
+  const [errElim,          setErrElim]          = useState('')
 
   useEffect(() => { cargar() }, [])
   useEffect(() => { if (historialAbierto) cargarHistorial() }, [periodoHist, historialAbierto]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -155,19 +158,56 @@ export default function ReportePersonal({ persona, areaNombre, onCerrar }: Props
   }
 
   async function eliminarHistorial(p: Periodo) {
-    const { data: revs } = await supabase
+    setEliminando(true)
+    setErrElim('')
+
+    const { data: revs, error: selErr } = await supabase
       .from('herramientas_revisiones')
       .select('id')
       .eq('personal_id', persona.id)
       .eq('tipo', 'personal')
       .gte('fecha_revision', startOf(p))
 
-    const ids = (revs ?? []).map((r: Record<string, unknown>) => r.id as string)
-    if (ids.length > 0) {
-      await supabase.from('herramientas_revision_detalle').delete().in('revision_id', ids)
-      await supabase.from('herramientas_revisiones').delete().in('id', ids)
+    if (selErr) {
+      setErrElim('Error al buscar revisiones: ' + selErr.message)
+      setEliminando(false)
+      return
     }
+
+    const ids = (revs ?? []).map((r: Record<string, unknown>) => r.id as string)
+
+    if (ids.length === 0) {
+      setConfirmElim(null)
+      setEliminando(false)
+      await cargarHistorial()
+      return
+    }
+
+    const { error: detErr } = await supabase
+      .from('herramientas_revision_detalle')
+      .delete()
+      .in('revision_id', ids)
+
+    if (detErr) {
+      setErrElim('Error al eliminar detalles: ' + detErr.message)
+      setEliminando(false)
+      return
+    }
+
+    const { error: revErr } = await supabase
+      .from('herramientas_revisiones')
+      .delete()
+      .in('id', ids)
+
+    if (revErr) {
+      setErrElim('Error al eliminar revisiones: ' + revErr.message)
+      setEliminando(false)
+      return
+    }
+
     setConfirmElim(null)
+    setEliminando(false)
+    onRefresh?.()
     await cargarHistorial()
   }
 
@@ -422,12 +462,17 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
                   <div style={{ fontSize: '0.78rem', color: '#6B7280', marginBottom: '0.75rem' }}>
                     Se borrarán las revisiones y su detalle. No se elimina personal ni herramientas.
                   </div>
+                  {errElim && (
+                    <div style={{ fontSize: '0.75rem', color: '#DC2626', background: '#FEE2E2', borderRadius: '6px', padding: '0.4rem 0.6rem', marginBottom: '0.5rem' }}>
+                      ⚠️ {errElim}
+                    </div>
+                  )}
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={() => setConfirmElim(null)} style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: '1px solid #E5E7EB', background: 'white', color: '#374151', fontWeight: '600', fontSize: '0.78rem', cursor: 'pointer' }}>
+                    <button onClick={() => { setConfirmElim(null); setErrElim('') }} disabled={eliminando} style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: '1px solid #E5E7EB', background: 'white', color: '#374151', fontWeight: '600', fontSize: '0.78rem', cursor: eliminando ? 'default' : 'pointer', opacity: eliminando ? 0.6 : 1 }}>
                       Cancelar
                     </button>
-                    <button onClick={() => { if (confirmElim) eliminarHistorial(confirmElim) }} style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: 'none', background: '#DC2626', color: 'white', fontWeight: '700', fontSize: '0.78rem', cursor: 'pointer' }}>
-                      Sí, eliminar
+                    <button onClick={() => { if (confirmElim) eliminarHistorial(confirmElim) }} disabled={eliminando} style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: 'none', background: '#DC2626', color: 'white', fontWeight: '700', fontSize: '0.78rem', cursor: eliminando ? 'wait' : 'pointer', opacity: eliminando ? 0.7 : 1 }}>
+                      {eliminando ? 'Eliminando...' : 'Sí, eliminar'}
                     </button>
                   </div>
                 </div>
