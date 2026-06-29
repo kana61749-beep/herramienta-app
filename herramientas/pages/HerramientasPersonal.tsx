@@ -290,6 +290,31 @@ export default function HerramientasPersonal() {
 
       const conPerdidas = new Set((perdRes.data ?? []).map((p: { personal_id: string }) => p.personal_id))
 
+      // Diagnóstico temporal — abrir DevTools del navegador para ver
+      console.group('[Herramientas] cargarPersonal — diagnóstico de incidencias')
+      const asigRaw = (asigRes.data ?? []) as { personal_id: string; estado: string }[]
+      const perdRaw = (perdRes.data ?? []) as { personal_id: string }[]
+      for (const p of personalRaw) {
+        const asigDePersona = asigRaw.filter(a => a.personal_id === p.id)
+        const perdDePersona = perdRaw.filter(x => x.personal_id === p.id)
+        const st = statsPorPersona.get(p.id) ?? { total: 0, perdidas: 0, reponer: 0 }
+        const estadoCalculado = conPerdidas.has(p.id) || st.perdidas > 0 ? 'con_faltantes' : st.reponer > 0 ? 'en_reposicion' : 'sin_novedades'
+        if (estadoCalculado !== 'sin_novedades') {
+          const conteoEstados = asigDePersona.reduce((acc: Record<string, number>, a) => {
+            acc[a.estado] = (acc[a.estado] ?? 0) + 1; return acc
+          }, {})
+          console.warn(`⚠️ ${p.nombre} → ${estadoCalculado}`, {
+            asig_total: asigDePersona.length,
+            estados_asignaciones: conteoEstados,
+            asig_con_faltante_descuento: st.perdidas,
+            asig_con_reponer: st.reponer,
+            perdidas_buscando_en_herramientas_perdidas: perdDePersona.length,
+            fuente_faltante: conPerdidas.has(p.id) ? 'herramientas_perdidas' : 'herramientas_asignaciones',
+          })
+        }
+      }
+      console.groupEnd()
+
       const solicPorPersona = new Map<string, number>()
       for (const s of (solRes.data ?? []) as { personal_id: string }[]) {
         solicPorPersona.set(s.personal_id, (solicPorPersona.get(s.personal_id) ?? 0) + 1)

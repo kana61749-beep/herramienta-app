@@ -285,6 +285,13 @@ export default function ReporteGeneral({ area, personalIds, colaboradores, onCer
     setLimpiando(true)
     setErrLimpiar('')
 
+    // 1. Siempre limpiar herramientas_perdidas huérfanas primero (sin depender de asignaciones)
+    await supabase.from('herramientas_perdidas')
+      .delete()
+      .in('personal_id', personalIds)
+      .eq('estado', 'buscando')
+
+    // 2. Buscar y resetear asignaciones con estado de incidencia
     const { data: asigs, error: selErr } = await supabase
       .from('herramientas_asignaciones')
       .select('id')
@@ -299,19 +306,6 @@ export default function ReporteGeneral({ area, personalIds, colaboradores, onCer
     }
 
     const ids = (asigs ?? []).map((a: Record<string, unknown>) => a.id as string)
-
-    if (ids.length === 0) {
-      setConfirmLimpiar(false)
-      setLimpiando(false)
-      await cargar()
-      return
-    }
-
-    // Borrar registros huérfanos de herramientas_perdidas para todos los personal del sector
-    await supabase.from('herramientas_perdidas')
-      .delete()
-      .in('personal_id', personalIds)
-      .eq('estado', 'buscando')
 
     if (ids.length > 0) {
       const { error: updErr } = await supabase

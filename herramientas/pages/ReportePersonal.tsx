@@ -262,6 +262,13 @@ export default function ReportePersonal({ persona, areaNombre, onCerrar, onRefre
     setLimpiando(true)
     setErrLimpiar('')
 
+    // 1. Siempre limpiar herramientas_perdidas huérfanas primero (sin depender de asignaciones)
+    await supabase.from('herramientas_perdidas')
+      .delete()
+      .eq('personal_id', persona.id)
+      .eq('estado', 'buscando')
+
+    // 2. Buscar y resetear asignaciones con estado de incidencia
     const { data: asigs, error: selErr } = await supabase
       .from('herramientas_asignaciones')
       .select('id')
@@ -276,19 +283,6 @@ export default function ReportePersonal({ persona, areaNombre, onCerrar, onRefre
     }
 
     const ids = (asigs ?? []).map((a: Record<string, unknown>) => a.id as string)
-
-    if (ids.length === 0) {
-      setConfirmLimpiar(false)
-      setLimpiando(false)
-      await cargar()
-      return
-    }
-
-    // Borrar registros huérfanos de herramientas_perdidas para este personal
-    await supabase.from('herramientas_perdidas')
-      .delete()
-      .eq('personal_id', persona.id)
-      .eq('estado', 'buscando')
 
     if (ids.length > 0) {
       const { error: updErr } = await supabase
