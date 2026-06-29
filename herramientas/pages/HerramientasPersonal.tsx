@@ -612,17 +612,25 @@ export default function HerramientasPersonal() {
 function PantallaSectores({ areas, cargando, onEntrar }: {
   areas: AreaConStats[]; cargando: boolean; onEntrar: (a: AreaConStats, t: Turno) => void
 }) {
-  const [sectorId, setSectorId] = useState<string | null>(null)
-  const sector = areas.find(a => a.id === (sectorId ?? areas[0]?.id)) ?? null
+  const [filtroId,    setFiltroId]    = useState<string | null>(null)   // null = todos
+  const [modalOpen,   setModalOpen]   = useState(false)
+
+  const sectorActivo  = filtroId ? (areas.find(a => a.id === filtroId) ?? null) : null
+  const labelFiltro   = sectorActivo?.nombre ?? 'Todos los sectores'
+  const totalPersonas = areas.reduce((s, a) => s + a.totalPersonal, 0)
+
+  function seleccionar(id: string | null) { setFiltroId(id); setModalOpen(false) }
 
   return (
     <div>
+      <style>{`@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}} @keyframes fadeIn{from{opacity:0}to{opacity:1}}`}</style>
+
       {/* ── Header ── */}
-      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '800', color: '#111827', letterSpacing: '-0.02em' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h1 style={{ margin: 0, fontSize: '1.35rem', fontWeight: '800', color: '#111827', letterSpacing: '-0.02em' }}>
           👥 Herramientas Personal
         </h1>
-        <p style={{ margin: '0.35rem 0 0', fontSize: '0.875rem', color: '#9CA3AF' }}>
+        <p style={{ margin: '0.3rem 0 0', fontSize: '0.85rem', color: '#9CA3AF' }}>
           Gestión de personal por sector y turno
         </p>
       </div>
@@ -631,146 +639,249 @@ function PantallaSectores({ areas, cargando, onEntrar }: {
         <div style={{ textAlign: 'center', padding: '4rem 0' }}>
           <div style={{ display: 'inline-block', width: '36px', height: '36px', border: '3px solid #E5E7EB', borderTopColor: '#0D9488', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
           <p style={{ color: '#9CA3AF', marginTop: '1rem', fontSize: '0.875rem' }}>Cargando sectores...</p>
-          <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
         </div>
       ) : areas.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem 1rem', background: 'white', borderRadius: '16px', border: '1.5px dashed #E5E7EB' }}>
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏗️</div>
-          <p style={{ color: '#374151', fontWeight: '700', margin: '0 0 0.4rem', fontSize: '1rem' }}>No hay sectores creados</p>
+          <p style={{ color: '#374151', fontWeight: '700', margin: '0 0 0.4rem' }}>No hay sectores creados</p>
           <p style={{ color: '#9CA3AF', fontSize: '0.85rem', margin: 0 }}>Primero crea un área en la sección de Áreas.</p>
         </div>
       ) : (
         <>
-          {/* ── Filtro de sectores centrado ── */}
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <p style={{ margin: '0 0 0.875rem', fontSize: '0.72rem', fontWeight: '700', color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Seleccionar sector
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-              {areas.map(a => {
-                const act = a.id === (sectorId ?? areas[0]?.id)
-                return (
-                  <button key={a.id} onClick={() => setSectorId(a.id)} style={{
-                    padding: '0.6rem 1.35rem', borderRadius: '100px', cursor: 'pointer', fontSize: '0.875rem',
-                    fontWeight: act ? '700' : '500',
-                    border: act ? 'none' : '1.5px solid #D1FAE5',
-                    background: act ? 'linear-gradient(135deg,#0D9488,#0F766E)' : 'white',
-                    color: act ? 'white' : '#0D9488',
-                    boxShadow: act ? '0 4px 14px rgba(13,148,136,0.35)' : '0 1px 4px rgba(0,0,0,0.05)',
-                    transition: 'all 0.15s',
-                  }}>
-                    {a.nombre}
-                  </button>
-                )
-              })}
+          {/* ── Botón selector de sector ── */}
+          <button onClick={() => setModalOpen(true)} style={{
+            display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%',
+            padding: '0.875rem 1.125rem', borderRadius: '14px', cursor: 'pointer', textAlign: 'left',
+            background: 'white', border: '1.5px solid #E5E7EB',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: '1.5rem',
+          }}>
+            <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: sectorActivo ? gradienteArea(sectorActivo.nombre) : 'linear-gradient(135deg,#0D9488,#0F766E)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '1rem', flexShrink: 0 }}>
+              {sectorActivo ? sectorActivo.nombre.charAt(0).toUpperCase() : '🏢'}
             </div>
-          </div>
-
-          {/* ── Detalle del sector seleccionado ── */}
-          {sector && (
-            <div>
-              {/* Cabecera del sector */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '2px solid #F3F4F6', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: gradienteArea(sector.nombre), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '1.1rem', flexShrink: 0 }}>
-                    {sector.nombre.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800', color: '#111827' }}>{sector.nombre}</h2>
-                    <p style={{ margin: '0.15rem 0 0', fontSize: '0.78rem', color: '#9CA3AF', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span>👤 {sector.totalPersonal} personas</span>
-                      <span>·</span>
-                      <span>🔧 {sector.totalHerramientas} herramientas</span>
-                      {sector.totalPerdidas > 0 && <><span>·</span><span style={{ color: '#DC2626', fontWeight: '600' }}>⚠️ {sector.totalPerdidas} pérdidas</span></>}
-                    </p>
-                  </div>
-                </div>
-                <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '0.3rem 0.75rem', borderRadius: '20px', background: sector.activo ? '#DCFCE7' : '#F3F4F6', color: sector.activo ? '#16A34A' : '#9CA3AF' }}>
-                  {sector.activo ? '● Activo' : '● Inactivo'}
-                </span>
-              </div>
-
-              {/* Tarjetas de turno */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(270px,1fr))', gap: '1.25rem' }}>
-                {(['manana', 'noche'] as Turno[]).map(turno => {
-                  const st  = sector.turnoStats[turno]
-                  const esM = turno === 'manana'
-                  const clr = esM
-                    ? { grad: 'linear-gradient(135deg,#0369A1,#0284C7)', light: '#EFF6FF', badge: '#DBEAFE', badgeTxt: '#1D4ED8' }
-                    : { grad: 'linear-gradient(135deg,#5B21B6,#7C3AED)', light: '#EDE9FE', badge: '#DDD6FE', badgeTxt: '#4C1D95' }
-                  const estadoColor = st.perdidas > 0 ? '#DC2626' : st.personal === 0 ? '#9CA3AF' : '#16A34A'
-                  const estadoLabel = st.perdidas > 0 ? 'Con faltantes' : st.personal === 0 ? 'Sin personal' : 'Sin novedades'
-
-                  return (
-                    <div key={turno} style={{ background: 'white', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '1px solid #F3F4F6' }}>
-
-                      {/* Header del turno */}
-                      <div style={{ background: clr.grad, padding: '1.125rem 1.375rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <div style={{ fontSize: '2rem', lineHeight: 1 }}>{esM ? '🌅' : '🌙'}</div>
-                          <div>
-                            <div style={{ color: 'white', fontWeight: '800', fontSize: '1.05rem', lineHeight: 1 }}>
-                              Turno {esM ? 'Mañana' : 'Noche'}
-                            </div>
-                            <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.78rem', marginTop: '0.2rem' }}>
-                              {st.personal} {st.personal === 1 ? 'persona' : 'personas'} registradas
-                            </div>
-                          </div>
-                        </div>
-                        <span style={{ background: 'rgba(255,255,255,0.18)', color: 'white', fontSize: '0.7rem', fontWeight: '700', padding: '0.25rem 0.65rem', borderRadius: '20px' }}>
-                          {sector.nombre}
-                        </span>
-                      </div>
-
-                      {/* Stats */}
-                      <div style={{ padding: '1.125rem 1.375rem' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem', marginBottom: '1rem' }}>
-                          {[
-                            { label: 'Personal',     val: st.personal,     ico: '👤', alerta: false },
-                            { label: 'Herramientas', val: st.herramientas, ico: '🔧', alerta: false },
-                            { label: 'Pérdidas',     val: st.perdidas,     ico: '⚠️', alerta: st.perdidas > 0 },
-                            { label: 'Solicitudes',  val: st.solicitudes,  ico: '📋', alerta: false },
-                          ].map(s => (
-                            <div key={s.label} style={{ background: s.alerta ? '#FEF2F2' : clr.light, borderRadius: '10px', padding: '0.7rem 0.875rem', border: s.alerta ? '1px solid #FECACA' : 'none' }}>
-                              <div style={{ fontSize: '0.68rem', color: s.alerta ? '#EF4444' : '#6B7280', fontWeight: '600', marginBottom: '0.25rem' }}>
-                                {s.ico} {s.label}
-                              </div>
-                              <div style={{ fontSize: '1.6rem', fontWeight: '800', color: s.alerta ? '#DC2626' : '#111827', lineHeight: 1 }}>
-                                {s.val}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Estado + Botón */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem' }}>
-                          <span style={{ fontSize: '0.73rem', fontWeight: '700', color: estadoColor, background: estadoColor + '18', padding: '0.3rem 0.75rem', borderRadius: '20px' }}>
-                            ● {estadoLabel}
-                          </span>
-                          {st.solicitudes > 0 && (
-                            <span style={{ fontSize: '0.7rem', fontWeight: '600', color: '#D97706', background: '#FEF3C7', padding: '0.25rem 0.6rem', borderRadius: '20px' }}>
-                              📋 {st.solicitudes} sol.
-                            </span>
-                          )}
-                        </div>
-
-                        <button onClick={() => onEntrar(sector, turno)} style={{
-                          width: '100%', background: clr.grad, color: 'white', border: 'none', borderRadius: '10px',
-                          padding: '0.75rem', fontSize: '0.9rem', fontWeight: '700', cursor: 'pointer',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                          letterSpacing: '0.01em',
-                        }}>
-                          Ingresar al turno <span style={{ fontSize: '1rem' }}>→</span>
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '0.72rem', color: '#9CA3AF', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.1rem' }}>Sector activo</div>
+              <div style={{ fontSize: '0.95rem', fontWeight: '700', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{labelFiltro}</div>
             </div>
-          )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', flexShrink: 0 }}>
+              {sectorActivo && (
+                <button onClick={e => { e.stopPropagation(); seleccionar(null) }} style={{ background: '#F3F4F6', border: 'none', borderRadius: '6px', padding: '0.25rem 0.5rem', cursor: 'pointer', fontSize: '0.72rem', color: '#6B7280', fontWeight: '600' }}>
+                  Todos
+                </button>
+              )}
+              <span style={{ color: '#9CA3AF', fontSize: '1rem', lineHeight: 1 }}>▾</span>
+            </div>
+          </button>
+
+          {/* ── Contenido: todos o un sector ── */}
+          {filtroId === null ? (
+            /* Vista general: tarjeta compacta por sector */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+              {areas.map(a => <SectorCompacto key={a.id} area={a} onEntrar={onEntrar} />)}
+            </div>
+          ) : sectorActivo ? (
+            /* Vista detallada: un sector con sus dos tarjetas de turno */
+            <SectorDetalle area={sectorActivo} onEntrar={onEntrar} />
+          ) : null}
         </>
       )}
+
+      {/* ── Modal bottom-sheet selector ── */}
+      {modalOpen && (
+        <>
+          <div onClick={() => setModalOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 3000, animation: 'fadeIn 0.2s ease', backdropFilter: 'blur(2px)' }} />
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', borderRadius: '22px 22px 0 0', zIndex: 3001, paddingBottom: 'env(safe-area-inset-bottom)', boxShadow: '0 -8px 40px rgba(0,0,0,0.18)', animation: 'slideUp 0.25s cubic-bezier(0.32,0.72,0,1)', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+            {/* Handle bar */}
+            <div style={{ width: '40px', height: '4px', borderRadius: '2px', background: '#E5E7EB', margin: '0.875rem auto 0' }} />
+            {/* Sheet header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.375rem 0.75rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800', color: '#111827' }}>Seleccionar sector</h3>
+              <button onClick={() => setModalOpen(false)} style={{ background: '#F3F4F6', border: 'none', borderRadius: '8px', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6B7280', fontSize: '1rem', fontWeight: '700' }}>✕</button>
+            </div>
+            {/* Options list */}
+            <div style={{ overflowY: 'auto', padding: '0.5rem 1rem 1.25rem', flex: 1 }}>
+              {/* Todos los sectores */}
+              <FiltroOpcion
+                icono="🏢"
+                grad="linear-gradient(135deg,#0D9488,#0F766E)"
+                label="Todos los sectores"
+                sub={`${totalPersonas} personas en total`}
+                seleccionado={!filtroId}
+                onClick={() => seleccionar(null)}
+              />
+              {/* Divisor */}
+              <div style={{ height: '1px', background: '#F3F4F6', margin: '0.625rem 0' }} />
+              {/* Sectores */}
+              {areas.map(a => (
+                <FiltroOpcion
+                  key={a.id}
+                  icono={a.nombre.charAt(0).toUpperCase()}
+                  grad={gradienteArea(a.nombre)}
+                  label={a.nombre}
+                  sub={`${a.totalPersonal} personas · ${a.totalHerramientas} herramientas${a.totalPerdidas > 0 ? ` · ⚠️ ${a.totalPerdidas} pérdidas` : ''}`}
+                  seleccionado={filtroId === a.id}
+                  alerta={a.totalPerdidas > 0}
+                  onClick={() => seleccionar(a.id)}
+                />
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function FiltroOpcion({ icono, grad, label, sub, seleccionado, alerta, onClick }: {
+  icono: string; grad: string; label: string; sub: string
+  seleccionado: boolean; alerta?: boolean; onClick: () => void
+}) {
+  return (
+    <button onClick={onClick} style={{
+      display: 'flex', alignItems: 'center', gap: '0.875rem', width: '100%', textAlign: 'left',
+      padding: '0.75rem 0.875rem', borderRadius: '12px', cursor: 'pointer', marginBottom: '0.25rem',
+      background: seleccionado ? '#F0FDFA' : 'transparent',
+      border: `1.5px solid ${seleccionado ? '#5EEAD4' : 'transparent'}`,
+      transition: 'background 0.12s',
+    }}>
+      <div style={{ width: '42px', height: '42px', borderRadius: '11px', background: grad, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '1rem', flexShrink: 0 }}>
+        {icono}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: seleccionado ? '700' : '600', color: seleccionado ? '#0D9488' : '#111827', fontSize: '0.9rem' }}>{label}</div>
+        <div style={{ fontSize: '0.73rem', color: alerta ? '#EF4444' : '#9CA3AF', marginTop: '0.1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</div>
+      </div>
+      {seleccionado && (
+        <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: '#0D9488', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <span style={{ color: 'white', fontSize: '0.8rem', fontWeight: '800' }}>✓</span>
+        </div>
+      )}
+    </button>
+  )
+}
+
+/* Vista compacta — usada en "Todos los sectores" */
+function SectorCompacto({ area, onEntrar }: { area: AreaConStats; onEntrar: (a: AreaConStats, t: Turno) => void }) {
+  return (
+    <div style={{ background: 'white', borderRadius: '14px', border: '1.5px solid #F3F4F6', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+      {/* Cabecera del sector */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', padding: '0.875rem 1.125rem', borderBottom: '1px solid #F9FAFB' }}>
+        <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: gradienteArea(area.nombre), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '1rem', flexShrink: 0 }}>
+          {area.nombre.charAt(0).toUpperCase()}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: '700', color: '#111827', fontSize: '0.9rem' }}>{area.nombre}</div>
+          <div style={{ fontSize: '0.73rem', color: '#9CA3AF' }}>
+            👤 {area.totalPersonal} · 🔧 {area.totalHerramientas}
+            {area.totalPerdidas > 0 && <span style={{ color: '#DC2626', fontWeight: '600' }}> · ⚠️ {area.totalPerdidas}</span>}
+          </div>
+        </div>
+        <span style={{ fontSize: '0.68rem', fontWeight: '700', padding: '0.25rem 0.6rem', borderRadius: '20px', background: area.totalPerdidas > 0 ? '#FEE2E2' : '#DCFCE7', color: area.totalPerdidas > 0 ? '#DC2626' : '#16A34A' }}>
+          {area.totalPerdidas > 0 ? '⚠️ Faltantes' : '✅ OK'}
+        </span>
+      </div>
+      {/* Fila de turnos */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+        {(['manana', 'noche'] as Turno[]).map((t, i) => {
+          const st  = area.turnoStats[t]
+          const esM = t === 'manana'
+          const clr = esM ? '#0284C7' : '#7C3AED'
+          const bg  = esM ? '#EFF6FF'  : '#EDE9FE'
+          return (
+            <div key={t} style={{ padding: '0.75rem 1rem', borderRight: i === 0 ? '1px solid #F3F4F6' : 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.375rem' }}>
+                <span style={{ fontSize: '0.875rem' }}>{esM ? '🌅' : '🌙'}</span>
+                <span style={{ fontSize: '0.73rem', fontWeight: '700', color: clr }}>Turno {esM ? 'Mañana' : 'Noche'}</span>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.625rem', flexWrap: 'wrap' }}>
+                {[
+                  { ico: '👤', val: st.personal },
+                  { ico: '🔧', val: st.herramientas },
+                  { ico: '⚠️', val: st.perdidas },
+                ].map(x => (
+                  <span key={x.ico} style={{ fontSize: '0.72rem', fontWeight: '600', color: (x.ico === '⚠️' && x.val > 0) ? '#DC2626' : '#6B7280', background: (x.ico === '⚠️' && x.val > 0) ? '#FEE2E2' : bg, padding: '0.2rem 0.45rem', borderRadius: '6px' }}>
+                    {x.ico} {x.val}
+                  </span>
+                ))}
+              </div>
+              <button onClick={() => onEntrar(area, t)} style={{ width: '100%', background: clr, color: 'white', border: 'none', borderRadius: '8px', padding: '0.45rem 0.5rem', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>
+                Ingresar →
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* Vista detallada — usada al seleccionar un sector específico */
+function SectorDetalle({ area, onEntrar }: { area: AreaConStats; onEntrar: (a: AreaConStats, t: Turno) => void }) {
+  return (
+    <div>
+      {/* Cabecera del sector */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '2px solid #F3F4F6', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+          <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: gradienteArea(area.nombre), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '1.1rem', flexShrink: 0 }}>
+            {area.nombre.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: '#111827' }}>{area.nombre}</h2>
+            <p style={{ margin: '0.15rem 0 0', fontSize: '0.78rem', color: '#9CA3AF' }}>
+              👤 {area.totalPersonal} personas · 🔧 {area.totalHerramientas} herramientas
+              {area.totalPerdidas > 0 && <span style={{ color: '#DC2626', fontWeight: '600' }}> · ⚠️ {area.totalPerdidas} pérdidas</span>}
+            </p>
+          </div>
+        </div>
+        <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '0.3rem 0.75rem', borderRadius: '20px', background: area.activo ? '#DCFCE7' : '#F3F4F6', color: area.activo ? '#16A34A' : '#9CA3AF' }}>
+          {area.activo ? '● Activo' : '● Inactivo'}
+        </span>
+      </div>
+
+      {/* Tarjetas de turno */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: '1.125rem' }}>
+        {(['manana', 'noche'] as Turno[]).map(turno => {
+          const st  = area.turnoStats[turno]
+          const esM = turno === 'manana'
+          const clr = esM
+            ? { grad: 'linear-gradient(135deg,#0369A1,#0284C7)', light: '#EFF6FF' }
+            : { grad: 'linear-gradient(135deg,#5B21B6,#7C3AED)', light: '#EDE9FE' }
+          const estadoColor = st.perdidas > 0 ? '#DC2626' : st.personal === 0 ? '#9CA3AF' : '#16A34A'
+          const estadoLabel = st.perdidas > 0 ? 'Con faltantes' : st.personal === 0 ? 'Sin personal' : 'Sin novedades'
+          return (
+            <div key={turno} style={{ background: 'white', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', border: '1px solid #F3F4F6' }}>
+              <div style={{ background: clr.grad, padding: '1.125rem 1.375rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ fontSize: '2rem', lineHeight: 1 }}>{esM ? '🌅' : '🌙'}</div>
+                <div>
+                  <div style={{ color: 'white', fontWeight: '800', fontSize: '1rem' }}>Turno {esM ? 'Mañana' : 'Noche'}</div>
+                  <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.78rem', marginTop: '0.15rem' }}>{st.personal} {st.personal === 1 ? 'persona' : 'personas'} registradas</div>
+                </div>
+              </div>
+              <div style={{ padding: '1.125rem 1.375rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem', marginBottom: '1rem' }}>
+                  {[
+                    { label: 'Personal',     val: st.personal,     ico: '👤', al: false },
+                    { label: 'Herramientas', val: st.herramientas, ico: '🔧', al: false },
+                    { label: 'Pérdidas',     val: st.perdidas,     ico: '⚠️', al: st.perdidas > 0 },
+                    { label: 'Solicitudes',  val: st.solicitudes,  ico: '📋', al: false },
+                  ].map(s => (
+                    <div key={s.label} style={{ background: s.al ? '#FEF2F2' : clr.light, borderRadius: '10px', padding: '0.7rem 0.875rem', border: s.al ? '1px solid #FECACA' : 'none' }}>
+                      <div style={{ fontSize: '0.68rem', color: s.al ? '#EF4444' : '#6B7280', fontWeight: '600', marginBottom: '0.25rem' }}>{s.ico} {s.label}</div>
+                      <div style={{ fontSize: '1.6rem', fontWeight: '800', color: s.al ? '#DC2626' : '#111827', lineHeight: 1 }}>{s.val}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.875rem' }}>
+                  <span style={{ fontSize: '0.73rem', fontWeight: '700', color: estadoColor, background: estadoColor + '18', padding: '0.3rem 0.75rem', borderRadius: '20px' }}>● {estadoLabel}</span>
+                  {st.solicitudes > 0 && <span style={{ fontSize: '0.7rem', fontWeight: '600', color: '#D97706', background: '#FEF3C7', padding: '0.25rem 0.6rem', borderRadius: '20px' }}>📋 {st.solicitudes}</span>}
+                </div>
+                <button onClick={() => onEntrar(area, turno)} style={{ width: '100%', background: clr.grad, color: 'white', border: 'none', borderRadius: '10px', padding: '0.75rem', fontSize: '0.9rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                  Ingresar al turno →
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
