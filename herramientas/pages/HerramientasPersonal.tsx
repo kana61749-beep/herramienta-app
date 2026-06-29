@@ -678,8 +678,6 @@ function PantallaSectores({ areas, cargando, onEntrar }: {
 
 /* Tarjeta de sector con turno Mañana y Noche — diseño moderno */
 function SectorCompacto({ area, onEntrar }: { area: AreaConStats; onEntrar: (a: AreaConStats, t: Turno) => void }) {
-  const hayPerdidas = area.totalPerdidas > 0
-
   const TURNO_CFG = {
     manana: {
       cardBg:    'linear-gradient(145deg, #FFFBEB, #FEF3C7)',
@@ -741,15 +739,6 @@ function SectorCompacto({ area, onEntrar }: { area: AreaConStats; onEntrar: (a: 
             {area.totalPersonal} personas · {area.totalHerramientas} herramientas
           </div>
         </div>
-        <span style={{
-          fontSize: '0.69rem', fontWeight: '700', padding: '0.3rem 0.7rem', borderRadius: '20px',
-          background: hayPerdidas ? '#FEE2E2' : '#DCFCE7',
-          color: hayPerdidas ? '#DC2626' : '#15803D',
-          boxShadow: hayPerdidas ? '0 1px 4px rgba(220,38,38,0.2)' : '0 1px 4px rgba(22,163,74,0.2)',
-          flexShrink: 0,
-        }}>
-          {hayPerdidas ? `⚠️ ${area.totalPerdidas}` : '✅ OK'}
-        </span>
       </div>
 
       {/* ── Subtarjetas de turno ── */}

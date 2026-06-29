@@ -161,6 +161,7 @@ export default function ReportePersonal({ persona, areaNombre, onCerrar, onRefre
     setEliminando(true)
     setErrElim('')
 
+    // 1 — IDs de revisiones a borrar
     const { data: revs, error: selErr } = await supabase
       .from('herramientas_revisiones')
       .select('id')
@@ -179,10 +180,53 @@ export default function ReportePersonal({ persona, areaNombre, onCerrar, onRefre
     if (ids.length === 0) {
       setConfirmElim(null)
       setEliminando(false)
-      await cargarHistorial()
+      await Promise.all([cargar(), cargarHistorial()])
       return
     }
 
+    const deletionSet = new Set(ids)
+
+    // 2 — Asignaciones con incidencia en las revisiones a borrar
+    const { data: detallesElim } = await supabase
+      .from('herramientas_revision_detalle')
+      .select('asignacion_id')
+      .in('revision_id', ids)
+      .in('resultado', ['perdida', 'descuento', 'reponer'])
+
+    const afectadasIds = [...new Set((detallesElim ?? []).map((d: Record<string, unknown>) => d.asignacion_id as string))]
+
+    // 3 — De esas asignaciones, descartar las que aún tienen incidencia en OTRAS revisiones
+    let idsParaReset: string[] = afectadasIds
+    if (afectadasIds.length > 0) {
+      const { data: detallesRest } = await supabase
+        .from('herramientas_revision_detalle')
+        .select('asignacion_id, revision_id')
+        .in('asignacion_id', afectadasIds)
+        .in('resultado', ['perdida', 'descuento', 'reponer'])
+
+      const enOtrasRev = new Set(
+        (detallesRest ?? [])
+          .filter((d: Record<string, unknown>) => !deletionSet.has(d.revision_id as string))
+          .map((d: Record<string, unknown>) => d.asignacion_id as string)
+      )
+      idsParaReset = afectadasIds.filter(id => !enOtrasRev.has(id))
+    }
+
+    // 4 — Resetear asignaciones a 'asignada' y borrar de herramientas_perdidas
+    if (idsParaReset.length > 0) {
+      const { error: updErr } = await supabase
+        .from('herramientas_asignaciones')
+        .update({ estado: 'asignada' })
+        .in('id', idsParaReset)
+      if (updErr) {
+        setErrElim('Error al actualizar asignaciones: ' + updErr.message)
+        setEliminando(false)
+        return
+      }
+      await supabase.from('herramientas_perdidas').delete().in('asignacion_id', idsParaReset)
+    }
+
+    // 5 — Borrar detalle y revisiones
     const { error: detErr } = await supabase
       .from('herramientas_revision_detalle')
       .delete()
@@ -208,7 +252,7 @@ export default function ReportePersonal({ persona, areaNombre, onCerrar, onRefre
     setConfirmElim(null)
     setEliminando(false)
     onRefresh?.()
-    await cargarHistorial()
+    await Promise.all([cargar(), cargarHistorial()])
   }
 
   const incPerdidas   = asignaciones.filter(a => a.estado === 'perdida')
