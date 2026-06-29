@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../../src/lib/supabase'
 
 const DIAS_LABEL = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
@@ -74,11 +74,11 @@ export default function Herramientas() {
   }
 
   const CARDS = [
-    { icono: '📍', label: 'Áreas',        valor: contadores.areas,       color: '#8B5CF6', fondo: '#EDE9FE' },
-    { icono: '🔧', label: 'Herramientas', valor: contadores.items,       color: '#7C3AED', fondo: '#F5F3FF' },
+    { icono: '📍', label: 'Áreas',        valor: contadores.areas,       color: '#3BA9FF', fondo: '#EFF6FF' },
+    { icono: '🔧', label: 'Herramientas', valor: contadores.items,       color: '#2563EB', fondo: '#EFF6FF' },
     { icono: '👩‍💼', label: 'Personal',     valor: contadores.personal,    color: '#0369A1', fondo: '#BAE6FD' },
     { icono: '⚠️', label: 'Pérdidas',     valor: contadores.perdidas,    color: '#DC2626', fondo: '#FEE2E2' },
-    { icono: '📋', label: 'Solicitudes',  valor: contadores.solicitudes, color: '#7C3AED', fondo: '#EDE9FE' },
+    { icono: '📋', label: 'Solicitudes',  valor: contadores.solicitudes, color: '#2563EB', fondo: '#EFF6FF' },
   ]
 
   const proximaFecha = config ? calcularProxima(config.dia) : null
@@ -123,13 +123,13 @@ export default function Herramientas() {
       {/* ── Banner ── */}
       <div style={{
         position: 'relative', overflow: 'hidden',
-        background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 35%, #EC4899 65%, #BE185D 100%)',
+        background: 'linear-gradient(135deg, #3BA9FF 0%, #2563EB 40%, #123C7A 80%, #0D2554 100%)',
         padding: '2.25rem 2rem 2rem', minHeight: '160px',
         display: 'flex', alignItems: 'center',
       }}>
         <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '220px', height: '220px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.07)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', top: '20px',  right: '20px',  width: '130px', height: '130px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.07)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '-60px', left: '35%', width: '170px', height: '170px', borderRadius: '50%', background: 'rgba(244,114,182,0.06)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: '-60px', left: '35%', width: '170px', height: '170px', borderRadius: '50%', background: 'rgba(59,169,255,0.06)', pointerEvents: 'none' }} />
 
         <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
           <div style={{
@@ -156,13 +156,13 @@ export default function Herramientas() {
 
         {/* PRÓXIMA REVISIÓN */}
         <div className="hi-revision" style={{
-          background: 'linear-gradient(135deg, #FAF5FF 0%, #EDE9FE 100%)',
+          background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
           borderRadius: '14px', padding: '1.125rem 1.25rem',
-          border: '1.5px solid #DDD6FE', boxShadow: '0 1px 6px rgba(139,92,246,0.08)',
+          border: '1.5px solid #BFDBFE', boxShadow: '0 1px 6px rgba(59,169,255,0.08)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.625rem' }}>
             <span style={{ fontSize: '1rem' }}>📅</span>
-            <span style={{ fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#8B5CF6' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#2563EB' }}>
               Próxima revisión
             </span>
           </div>
@@ -170,11 +170,11 @@ export default function Herramientas() {
           {!config ? (
             <p style={{ margin: '0 0 0.875rem', fontSize: '0.875rem', color: '#6B7280', lineHeight: 1.5 }}>
               Configura el día y horario en{' '}
-              <span style={{ color: '#8B5CF6', fontWeight: '600' }}>Configuración</span>{' '}
+              <span style={{ color: '#2563EB', fontWeight: '600' }}>Configuración</span>{' '}
               para ver la próxima revisión aquí.
             </p>
           ) : (
-            <p style={{ margin: '0 0 0.875rem', fontSize: '0.9rem', fontWeight: '700', color: '#4C1D95', lineHeight: 1.4 }}>
+            <p style={{ margin: '0 0 0.875rem', fontSize: '0.9rem', fontWeight: '700', color: '#1E3A8A', lineHeight: 1.4 }}>
               {proximaFecha}
             </p>
           )}
@@ -186,13 +186,13 @@ export default function Herramientas() {
             ].map(h => (
               <div key={h.label} style={{
                 display: 'flex', alignItems: 'center', gap: '0.45rem',
-                background: 'white', border: '1.5px solid #DDD6FE',
+                background: 'white', border: '1.5px solid #BFDBFE',
                 borderRadius: '10px', padding: '0.5rem 0.875rem', flex: '1 1 auto',
               }}>
                 <span style={{ fontSize: '1.1rem' }}>{h.icono}</span>
                 <div>
                   <div style={{ fontSize: '0.65rem', color: '#6B7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h.label}</div>
-                  <div style={{ fontSize: '1rem', fontWeight: '800', color: h.valor === '—' ? '#9CA3AF' : '#8B5CF6' }}>{h.valor}</div>
+                  <div style={{ fontSize: '1rem', fontWeight: '800', color: h.valor === '—' ? '#9CA3AF' : '#3BA9FF' }}>{h.valor}</div>
                 </div>
               </div>
             ))}

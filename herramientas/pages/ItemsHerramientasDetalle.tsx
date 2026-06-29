@@ -21,7 +21,7 @@ const ESTADO_ITEM: Record<string, { label: string; color: string; bg: string }> 
   faltante:   { label: 'Faltante',   color: '#D97706', bg: '#FEF3C7' },
   perdida:    { label: 'Perdida',    color: '#DC2626', bg: '#FEE2E2' },
   encontrada: { label: 'Encontrada', color: '#0369A1', bg: '#DBEAFE' },
-  repuesta:   { label: 'Repuesta',   color: '#7C3AED', bg: '#EDE9FE' },
+  repuesta:   { label: 'Repuesta',   color: '#2563EB', bg: '#EFF6FF' },
 }
 
 interface ItemHerramienta {
@@ -133,7 +133,7 @@ export default function ItemsHerramientasDetalle() {
   return (
     <div style={{ padding: '1.5rem' }}>
       <style>{`
-        .her-input:focus { border-color: #0D9488 !important; outline: none; box-shadow: 0 0 0 3px rgba(13,148,136,0.12); }
+        .her-input:focus { border-color: #2563EB !important; outline: none; box-shadow: 0 0 0 3px rgba(59,169,255,0.12); }
         .her-tab:hover   { opacity: 0.8; }
         .item-row        { transition: background 0.1s; }
         .item-row:hover  { background: #F0FDFA !important; }
@@ -149,7 +149,7 @@ export default function ItemsHerramientasDetalle() {
       </button>
 
       {/* ── Encabezado del área ── */}
-      <div style={{ background: 'linear-gradient(135deg,#0D9488 0%,#0F766E 100%)', borderRadius: '14px', padding: '1.25rem 1.5rem', marginBottom: '1rem', boxShadow: '0 2px 10px rgba(13,148,136,0.25)' }}>
+      <div style={{ background: 'linear-gradient(135deg,#2563EB 0%,#123C7A 100%)', borderRadius: '14px', padding: '1.25rem 1.5rem', marginBottom: '1rem', boxShadow: '0 2px 10px rgba(37,99,235,0.25)' }}>
         <h1 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>
           🗂️ {area.nombre}
         </h1>
@@ -173,7 +173,7 @@ export default function ItemsHerramientasDetalle() {
       {/* ── Stats ── */}
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
         {[
-          { label: 'Total',     valor: items.length,                                          color: '#0D9488' },
+          { label: 'Total',     valor: items.length,                                          color: '#2563EB' },
           { label: 'Completas', valor: items.filter(i => i.estado === 'completa').length,     color: '#16A34A' },
           { label: 'Faltantes', valor: items.filter(i => i.estado === 'faltante' || i.estado === 'perdida').length, color: '#DC2626' },
         ].map(s => (
@@ -191,7 +191,7 @@ export default function ItemsHerramientasDetalle() {
             key={t.id}
             className="her-tab"
             onClick={() => setTabActiva(t.id)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.625rem 0.875rem', whiteSpace: 'nowrap', fontSize: '0.82rem', fontWeight: '600', color: tabActiva === t.id ? '#0D9488' : '#6B7280', borderBottom: tabActiva === t.id ? '2px solid #0D9488' : '2px solid transparent', marginBottom: '-2px' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.625rem 0.875rem', whiteSpace: 'nowrap', fontSize: '0.82rem', fontWeight: '600', color: tabActiva === t.id ? '#2563EB' : '#6B7280', borderBottom: tabActiva === t.id ? '2px solid #2563EB' : '2px solid transparent', marginBottom: '-2px' }}
           >
             {t.icono} {t.label}
           </button>
@@ -234,7 +234,7 @@ export default function ItemsHerramientasDetalle() {
                     className="item-row"
                     style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.875rem 1.125rem', borderBottom: i < filtrados.length - 1 ? '1px solid #F3F4F6' : 'none', background: 'white' }}
                   >
-                    <div style={{ width: '36px', height: '36px', borderRadius: '8px', flexShrink: 0, background: 'linear-gradient(135deg,#0D9488,#0F766E)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '8px', flexShrink: 0, background: 'linear-gradient(135deg,#2563EB,#123C7A)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>
                       🔧
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -292,7 +292,7 @@ export default function ItemsHerramientasDetalle() {
         <>
           <div className="modal-overlay" onClick={() => setModalItem(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, backdropFilter: 'blur(2px)' }} />
           <div className="modal-box" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'min(460px,calc(100vw - 2rem))', background: 'white', borderRadius: '16px', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', zIndex: 2001, overflow: 'hidden' }}>
-            <div style={{ background: 'linear-gradient(135deg,#0D9488,#0F766E)', padding: '1.125rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ background: 'linear-gradient(135deg,#2563EB,#123C7A)', padding: '1.125rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ color: 'white', fontWeight: '700', fontSize: '1rem' }}>🔧 Nueva herramienta — {area.nombre}</span>
               <button onClick={() => setModalItem(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', borderRadius: '8px', padding: '0.3rem 0.5rem', cursor: 'pointer', fontSize: '1rem', lineHeight: 1 }}>✕</button>
             </div>
@@ -376,6 +376,6 @@ const sCode: CSSProperties        = { background: '#F1F5F9', padding: '0.1rem 0.
 const sTxtGris: CSSProperties     = { color: '#9CA3AF', fontSize: '0.875rem', margin: 0 }
 const sInfoTxt: CSSProperties     = { fontSize: '0.82rem', color: 'rgba(255,255,255,0.85)' }
 const sLabel: CSSProperties       = { display: 'block', fontSize: '0.78rem', fontWeight: '600', color: '#374151', marginBottom: '0.375rem' }
-const sBtnVolver: CSSProperties   = { background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#0D9488', fontWeight: '600', padding: '0 0 1rem 0', display: 'block' }
-const sBtnPrimario: CSSProperties = { background: 'linear-gradient(135deg,#0D9488,#0F766E)', color: 'white', border: 'none', borderRadius: '8px', padding: '0.5rem 1.125rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.375rem', whiteSpace: 'nowrap' }
+const sBtnVolver: CSSProperties   = { background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#2563EB', fontWeight: '600', padding: '0 0 1rem 0', display: 'block' }
+const sBtnPrimario: CSSProperties = { background: 'linear-gradient(135deg,#2563EB,#123C7A)', color: 'white', border: 'none', borderRadius: '8px', padding: '0.5rem 1.125rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.375rem', whiteSpace: 'nowrap' }
 const sBtnSecundario: CSSProperties = { background: 'white', color: '#374151', border: '1.5px solid #E5E7EB', borderRadius: '8px', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer' }

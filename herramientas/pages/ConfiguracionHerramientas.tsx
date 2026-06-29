@@ -77,7 +77,7 @@ export default function ConfiguracionHerramientas() {
 
   return (
     <div style={{ padding: '1.5rem' }}>
-      <style>{`.her-input:focus { border-color: #8B5CF6 !important; outline: none; box-shadow: 0 0 0 3px rgba(139,92,246,0.12); }`}</style>
+      <style>{`.her-input:focus { border-color: #3BA9FF !important; outline: none; box-shadow: 0 0 0 3px rgba(59,169,255,0.12); }`}</style>
 
       {/* ── Header ── */}
       <div style={{ marginBottom: '1.5rem' }}>
@@ -166,4 +166,4 @@ const sGrilla: CSSProperties        = { display: 'grid', gridTemplateColumns: '1
 const sLabel: CSSProperties         = { display: 'block', fontSize: '0.78rem', fontWeight: '600', color: '#374151', marginBottom: '0.375rem' }
 const sInput: CSSProperties         = { width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1.5px solid #E5E7EB', fontSize: '0.875rem', color: '#111827', outline: 'none', boxSizing: 'border-box', background: 'white' }
 const sHint: CSSProperties          = { margin: '0.3rem 0 0', fontSize: '0.72rem', color: '#9CA3AF' }
-const sBtnPrimario: CSSProperties   = { background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)', color: 'white', border: 'none', borderRadius: '8px', padding: '0.625rem 1.25rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer' }
+const sBtnPrimario: CSSProperties   = { background: 'linear-gradient(135deg, #2563EB, #123C7A)', color: 'white', border: 'none', borderRadius: '8px', padding: '0.625rem 1.25rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer' }

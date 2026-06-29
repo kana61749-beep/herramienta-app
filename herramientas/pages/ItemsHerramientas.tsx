@@ -7,8 +7,8 @@ const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado
 
 // Paleta determinista por nombre de área
 const PALETA = [
-  'linear-gradient(135deg, #0D9488, #0F766E)',
-  'linear-gradient(135deg, #7C3AED, #6D28D9)',
+  'linear-gradient(135deg, #3BA9FF, #2563EB)',
+  'linear-gradient(135deg, #2563EB, #1D4ED8)',
   'linear-gradient(135deg, #0369A1, #0284C7)',
   'linear-gradient(135deg, #DC2626, #B91C1C)',
   'linear-gradient(135deg, #D97706, #B45309)',
@@ -49,7 +49,7 @@ export default function ItemsHerramientas() {
 
   return (
     <div style={{ padding: '1.5rem' }}>
-      <style>{`.her-input:focus { border-color: #0D9488 !important; outline: none; box-shadow: 0 0 0 3px rgba(13,148,136,0.12); }`}</style>
+      <style>{`.her-input:focus { border-color: #3BA9FF !important; outline: none; box-shadow: 0 0 0 3px rgba(59,169,255,0.12); }`}</style>
 
       {/* ── Header ── */}
       <div style={{ marginBottom: '1.5rem' }}>
@@ -72,13 +72,13 @@ export default function ItemsHerramientas() {
       {!cargando && !errorCarga && (
         <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
           <div style={sResumen}>
-            <span style={{ fontSize: '1.6rem', fontWeight: '800', color: '#0D9488', lineHeight: 1 }}>{areas.length}</span>
+            <span style={{ fontSize: '1.6rem', fontWeight: '800', color: '#3BA9FF', lineHeight: 1 }}>{areas.length}</span>
             <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: '600', marginTop: '0.2rem' }}>
               {areas.length === 1 ? 'Área creada' : 'Áreas creadas'}
             </span>
           </div>
           <div style={sResumen}>
-            <span style={{ fontSize: '1.6rem', fontWeight: '800', color: '#0F766E', lineHeight: 1 }}>0</span>
+            <span style={{ fontSize: '1.6rem', fontWeight: '800', color: '#2563EB', lineHeight: 1 }}>0</span>
             <span style={{ fontSize: '0.75rem', color: '#6B7280', fontWeight: '600', marginTop: '0.2rem' }}>Herramientas registradas</span>
           </div>
         </div>
@@ -142,7 +142,7 @@ function AreaCard({ area, onClick }: { area: AreaHerramienta; onClick: () => voi
       onMouseEnter={e => {
         const b = e.currentTarget
         b.style.borderColor = '#99F6E4'
-        b.style.boxShadow   = '0 3px 12px rgba(13,148,136,0.13)'
+        b.style.boxShadow   = '0 3px 12px rgba(59,169,255,0.13)'
       }}
       onMouseLeave={e => {
         const b = e.currentTarget
@@ -191,4 +191,4 @@ function AreaCard({ area, onClick }: { area: AreaHerramienta; onClick: () => voi
 const sInput: CSSProperties    = { padding: '0.5rem 0.875rem', borderRadius: '8px', border: '1.5px solid #E5E7EB', fontSize: '0.875rem', color: '#111827', outline: 'none', boxSizing: 'border-box', background: 'white', width: '100%' }
 const sResumen: CSSProperties  = { background: 'white', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '0.875rem 1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '130px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }
 const sTxtGris: CSSProperties  = { color: '#9CA3AF', fontSize: '0.875rem', margin: 0 }
-const sBtnInline: CSSProperties = { background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', padding: 0, color: '#0D9488', fontWeight: '600' }
+const sBtnInline: CSSProperties = { background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', padding: 0, color: '#3BA9FF', fontWeight: '600' }

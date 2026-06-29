@@ -46,7 +46,12 @@ export default function LayoutHerramientas() {
   }
 
   const navLinks = (
-    <div style={{ flex: 1, paddingTop: '0.25rem', overflowY: 'auto' }}>
+    <div style={{ flex: 1, paddingTop: '0.5rem', overflowY: 'auto' }}>
+
+      <div style={{ padding: '0.25rem 1rem 0.5rem', fontSize: '0.6rem', fontWeight: '700', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
+        Navegación
+      </div>
+
       {NAV_LINKS.map(({ to, label, icon, end }) => (
         <NavLink
           key={to}
@@ -56,69 +61,82 @@ export default function LayoutHerramientas() {
           style={({ isActive }) => ({
             display: 'flex',
             alignItems: 'center',
-            gap: '0.6rem',
-            padding: '0.75rem 1.125rem',
-            color: isActive ? '#FFFFFF' : 'rgba(255,255,255,0.78)',
-            backgroundColor: isActive ? 'rgba(255,255,255,0.18)' : 'transparent',
+            gap: '0.75rem',
+            margin: '0.125rem 0.75rem',
+            padding: '0.7rem 0.875rem',
+            color: isActive ? '#FFFFFF' : 'rgba(255,255,255,0.65)',
+            backgroundColor: isActive ? 'rgba(59,169,255,0.16)' : 'transparent',
             textDecoration: 'none',
-            fontWeight: isActive ? '700' : '400',
-            borderLeft: isActive ? '3px solid #F9A8D4' : '3px solid transparent',
-            fontSize: '1rem',
+            fontWeight: isActive ? '600' : '400',
+            borderLeft: isActive ? '3px solid #3BA9FF' : '3px solid transparent',
+            fontSize: '0.875rem',
             letterSpacing: '0.01em',
-            transition: 'background-color 0.18s, color 0.18s',
+            transition: 'all 0.15s ease',
             borderRadius: '0 10px 10px 0',
-            marginRight: '0.5rem',
           })}
         >
-          <span style={{ fontSize: '1.05rem', lineHeight: 1, flexShrink: 0 }}>{icon}</span>
-          {label}
+          <span style={{
+            width: '34px', height: '34px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '1.15rem', flexShrink: 0,
+            borderRadius: '9px',
+          }}>
+            {icon}
+          </span>
+          <span>{label}</span>
         </NavLink>
       ))}
 
-      <button
-        onClick={cerrarSesion}
-        style={{
-          display: 'flex', alignItems: 'center', gap: '0.6rem',
-          width: '100%', padding: '0.75rem 1.125rem',
-          color: 'rgba(255,190,190,0.8)',
-          backgroundColor: 'transparent', border: 'none',
-          cursor: 'pointer', fontSize: '1rem',
-          borderLeft: '3px solid transparent',
-          borderRadius: '0 10px 10px 0',
-          marginRight: '0.5rem',
-          transition: 'background-color 0.18s, color 0.18s',
-          textAlign: 'left',
-        }}
-        onMouseEnter={e => {
-          e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.15)'
-          e.currentTarget.style.color = 'rgba(255,190,190,1)'
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.backgroundColor = 'transparent'
-          e.currentTarget.style.color = 'rgba(255,190,190,0.8)'
-        }}
-      >
-        <span style={{ fontSize: '1.05rem', lineHeight: 1, flexShrink: 0 }}>↩</span>
-        Cerrar sesión
-      </button>
+      <div style={{ margin: '0.875rem 1.25rem', borderTop: '1px solid rgba(255,255,255,0.07)' }} />
+
+      <div style={{ margin: '0 0.75rem' }}>
+        <button
+          onClick={cerrarSesion}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '0.75rem',
+            width: '100%', padding: '0.7rem 0.875rem',
+            color: 'rgba(255,170,170,0.75)',
+            backgroundColor: 'transparent', border: 'none',
+            cursor: 'pointer', fontSize: '0.875rem',
+            borderLeft: '3px solid transparent',
+            borderRadius: '0 10px 10px 0',
+            transition: 'all 0.15s ease',
+            textAlign: 'left',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.1)'
+            e.currentTarget.style.color = 'rgba(255,170,170,1)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.backgroundColor = 'transparent'
+            e.currentTarget.style.color = 'rgba(255,170,170,0.75)'
+          }}
+        >
+          <span style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.15rem', flexShrink: 0, borderRadius: '9px' }}>
+            ↩
+          </span>
+          <span>Cerrar sesión</span>
+        </button>
+      </div>
     </div>
   )
 
   const sidebarStyle = {
-    width: '224px',
-    background: 'linear-gradient(180deg, #8B5CF6 0%, #7C3AED 55%, #EC4899 100%)',
+    width: '252px',
+    background: '#0D2554',
     display: 'flex',
     flexDirection: 'column' as const,
     flexShrink: 0,
+    boxShadow: '4px 0 24px rgba(0,0,0,0.18)',
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
 
       <style>{`
-        .her-nav-link:not([aria-current="page"]):hover {
-          background: rgba(255,255,255,0.12) !important;
-          color: #ffffff !important;
+        nav a:not([aria-current="page"]):hover {
+          background: rgba(255,255,255,0.06) !important;
+          color: rgba(255,255,255,0.92) !important;
         }
         .her-main { box-sizing: border-box; }
         .her-main *, .her-main *::before, .her-main *::after { box-sizing: border-box; }
@@ -127,19 +145,20 @@ export default function LayoutHerramientas() {
         .her-main p, .her-main div, .her-main span { overflow-wrap: break-word; }
       `}</style>
 
-      {/* Barra superior */}
+      {/* ── Barra superior ── */}
       <header style={{
-        background: 'linear-gradient(90deg, #8B5CF6 0%, #EC4899 100%)',
-        padding: '0 1rem',
-        height: '56px',
+        background: '#FFFFFF',
+        padding: '0 1.25rem',
+        height: '60px',
         display: 'flex',
         alignItems: 'center',
-        gap: '0.875rem',
+        gap: '1rem',
         flexShrink: 0,
         position: 'sticky',
         top: 0,
         zIndex: 1001,
-        boxShadow: '0 2px 16px rgba(139,92,246,0.35)',
+        borderBottom: '1px solid #E8EDF2',
+        boxShadow: '0 1px 8px rgba(0,0,0,0.06)',
       }}>
 
         {/* Botón hamburguesa */}
@@ -147,71 +166,88 @@ export default function LayoutHerramientas() {
           onClick={() => setMenuAbierto(v => !v)}
           aria-label={menuAbierto ? 'Cerrar menú' : 'Abrir menú'}
           style={{
-            background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.22)',
-            color: 'white', cursor: 'pointer', padding: '0.375rem 0.5rem',
+            background: 'none', border: '1.5px solid #DDE3EC',
+            color: '#374151', cursor: 'pointer', padding: '0.375rem 0.5rem',
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
             gap: '4px', flexShrink: 0, borderRadius: '8px',
-            transition: 'background 0.15s',
+            transition: 'all 0.15s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.22)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)' }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = '#EFF6FF'
+            e.currentTarget.style.borderColor = '#93C5FD'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'none'
+            e.currentTarget.style.borderColor = '#DDE3EC'
+          }}
         >
-          <span style={{ display: 'block', width: '20px', height: '2px', backgroundColor: 'white', borderRadius: '2px' }} />
-          <span style={{ display: 'block', width: '20px', height: '2px', backgroundColor: 'white', borderRadius: '2px' }} />
-          <span style={{ display: 'block', width: '20px', height: '2px', backgroundColor: 'white', borderRadius: '2px' }} />
+          <span style={{ display: 'block', width: '18px', height: '2px', backgroundColor: '#374151', borderRadius: '2px' }} />
+          <span style={{ display: 'block', width: '18px', height: '2px', backgroundColor: '#374151', borderRadius: '2px' }} />
+          <span style={{ display: 'block', width: '18px', height: '2px', backgroundColor: '#374151', borderRadius: '2px' }} />
         </button>
 
         {/* Logo + título */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flex: 1 }}>
           <div style={{
-            width: '30px', height: '30px', borderRadius: '8px',
-            background: 'linear-gradient(135deg, #F9A8D4, #8B5CF6)',
-            border: '1px solid rgba(255,255,255,0.25)',
+            width: '36px', height: '36px', borderRadius: '10px',
+            background: 'linear-gradient(135deg, #3BA9FF, #2563EB)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '0.9rem', flexShrink: 0,
+            fontSize: '1rem', flexShrink: 0,
+            boxShadow: '0 2px 10px rgba(59,169,255,0.4)',
           }}>
             🔧
           </div>
-          <span style={{ color: 'white', fontWeight: '700', fontSize: '0.95rem', letterSpacing: '0.02em' }}>
-            Herramientas
-          </span>
-          <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem', marginLeft: '0.25rem' }}>
-            Panel
-          </span>
+          <div>
+            <div style={{ color: '#0D2554', fontWeight: '700', fontSize: '0.95rem', letterSpacing: '-0.01em', lineHeight: 1.2 }}>
+              Herramientas
+            </div>
+            <div style={{ color: '#9CA3AF', fontSize: '0.68rem', lineHeight: 1, marginTop: '0.1rem' }}>
+              Panel de gestión
+            </div>
+          </div>
         </div>
 
       </header>
 
-      {/* Cuerpo: sidebar + contenido */}
+      {/* ── Cuerpo: sidebar + contenido ── */}
       <div style={{ display: 'flex', flex: 1 }}>
 
         {/* Desktop (≥ 1181px): sidebar en flujo normal */}
         {!esCompacto && menuAbierto && (
           <nav style={sidebarStyle}>
+            {/* Cabecera del sidebar */}
             <div style={{
-              padding: '1rem 1.125rem 0.75rem',
-              borderBottom: '1px solid rgba(255,255,255,0.1)',
-              display: 'flex', alignItems: 'center', gap: '0.625rem',
+              padding: '1.125rem 1.25rem 1rem',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+              display: 'flex', alignItems: 'center', gap: '0.75rem',
             }}>
               <div style={{
-                width: '32px', height: '32px', borderRadius: '9px', flexShrink: 0,
-                background: 'linear-gradient(135deg, rgba(249,168,212,0.4), rgba(139,92,246,0.4))',
-                border: '1px solid rgba(255,255,255,0.2)',
+                width: '40px', height: '40px', borderRadius: '11px', flexShrink: 0,
+                background: 'linear-gradient(135deg, #3BA9FF, #2563EB)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '0.9rem',
+                fontSize: '1.15rem',
+                boxShadow: '0 3px 12px rgba(59,169,255,0.4)',
               }}>
                 🔧
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.1rem' }}>
-                  Panel
-                </div>
-                <div style={{ fontSize: '0.8rem', fontWeight: '600', color: 'rgba(255,255,255,0.88)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '0.88rem', fontWeight: '700', color: '#FFFFFF', letterSpacing: '-0.01em' }}>
                   Herramientas
+                </div>
+                <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.1rem' }}>
+                  Panel de gestión
                 </div>
               </div>
             </div>
+
             {navLinks}
+
+            {/* Footer del sidebar */}
+            <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.2)', textAlign: 'center', letterSpacing: '0.04em' }}>
+                v1.0 · Sistema de Herramientas
+              </div>
+            </div>
           </nav>
         )}
 
@@ -220,7 +256,7 @@ export default function LayoutHerramientas() {
           <>
             <nav style={{
               ...sidebarStyle,
-              position: 'fixed', top: '56px', left: 0, bottom: 0,
+              position: 'fixed', top: '60px', left: 0, bottom: 0,
               zIndex: 1000,
               transform: menuAbierto ? 'translateX(0)' : 'translateX(-100%)',
               transition: 'transform 0.25s ease',
@@ -231,8 +267,8 @@ export default function LayoutHerramientas() {
               <div
                 onClick={() => setMenuAbierto(false)}
                 style={{
-                  position: 'fixed', top: '56px', left: 0, right: 0, bottom: 0,
-                  backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 999,
+                  position: 'fixed', top: '60px', left: 0, right: 0, bottom: 0,
+                  backgroundColor: 'rgba(0,0,0,0.45)', zIndex: 999, backdropFilter: 'blur(2px)',
                 }}
               />
             )}
@@ -240,7 +276,7 @@ export default function LayoutHerramientas() {
         )}
 
         {/* Contenido de la página activa */}
-        <main className="her-main" style={{ flex: 1, backgroundColor: '#FFF9FC', overflowX: 'hidden', overflowY: 'auto', minWidth: 0 }}>
+        <main className="her-main" style={{ flex: 1, backgroundColor: '#F7F9FC', overflowX: 'hidden', overflowY: 'auto', minWidth: 0 }}>
           <Outlet />
         </main>
 

@@ -1,4 +1,4 @@
-﻿import { useState, type CSSProperties } from 'react'
+import { useState, type CSSProperties } from 'react'
 
 type TabReporte = 'resumen' | 'areas' | 'personal' | 'historial'
 
@@ -10,10 +10,10 @@ const TABS: { id: TabReporte; icono: string; label: string }[] = [
 ]
 
 const INDICADORES = [
-  { label: 'Total revisiones',     valor: 0, color: '#8B5CF6', icono: '📋' },
+  { label: 'Total revisiones',     valor: 0, color: '#3BA9FF', icono: '📋' },
   { label: 'Herramientas revisadas', valor: 0, color: '#0369A1', icono: '🔧' },
   { label: 'Pérdidas registradas', valor: 0, color: '#DC2626', icono: '⚠️' },
-  { label: 'Descuentos aplicados', valor: '$0', color: '#7C3AED', icono: '💸' },
+  { label: 'Descuentos aplicados', valor: '$0', color: '#2563EB', icono: '💸' },
 ]
 
 export default function ReportesHerramientas() {
@@ -21,7 +21,7 @@ export default function ReportesHerramientas() {
 
   return (
     <div style={{ padding: '1.5rem' }}>
-      <style>{`.her-tab { transition: color 0.15s; } .her-tab:hover { color: #8B5CF6 !important; } .exp-btn:hover { opacity: 0.85; }`}</style>
+      <style>{`.her-tab { transition: color 0.15s; } .her-tab:hover { color: #3BA9FF !important; } .exp-btn:hover { opacity: 0.85; }`}</style>
 
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
@@ -62,8 +62,8 @@ export default function ReportesHerramientas() {
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
               padding: '0.625rem 0.875rem', fontSize: '0.82rem', fontWeight: '600', whiteSpace: 'nowrap',
-              color: tab === t.id ? '#8B5CF6' : '#6B7280',
-              borderBottom: tab === t.id ? '2px solid #8B5CF6' : '2px solid transparent',
+              color: tab === t.id ? '#2563EB' : '#6B7280',
+              borderBottom: tab === t.id ? '2px solid #2563EB' : '2px solid transparent',
               marginBottom: '-2px',
             }}
           >

@@ -6,8 +6,8 @@ import type { AreaHerramienta } from '../types'
 const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
 const PALETA = [
-  'linear-gradient(135deg, #EC4899, #BE185D)',
-  'linear-gradient(135deg, #7C3AED, #6D28D9)',
+  'linear-gradient(135deg, #3BA9FF, #2563EB)',
+  'linear-gradient(135deg, #123C7A, #0D2554)',
   'linear-gradient(135deg, #0369A1, #0284C7)',
   'linear-gradient(135deg, #DC2626, #B91C1C)',
   'linear-gradient(135deg, #D97706, #B45309)',
@@ -163,10 +163,10 @@ export default function AreasHerramientas() {
   return (
     <div style={{ padding: '1.5rem' }}>
       <style>{`
-        .her-input:focus { border-color: #8B5CF6 !important; outline: none; box-shadow: 0 0 0 3px rgba(139,92,246,0.12); }
+        .her-input:focus { border-color: #3BA9FF !important; outline: none; box-shadow: 0 0 0 3px rgba(59,169,255,0.12); }
         .her-tab { transition: color 0.15s; }
-        .her-tab:hover { color: #8B5CF6 !important; }
-        .menu-item:hover { background: #FAF5FF !important; }
+        .her-tab:hover { color: #3BA9FF !important; }
+        .menu-item:hover { background: #EFF6FF !important; }
         .menu-item-danger:hover { background: #FEF2F2 !important; }
       `}</style>
 
@@ -201,16 +201,16 @@ export default function AreasHerramientas() {
               background: 'none', border: 'none', cursor: 'pointer',
               padding: '0.625rem 0.875rem', display: 'flex', alignItems: 'center', gap: '0.4rem',
               fontSize: '0.85rem', fontWeight: '600', whiteSpace: 'nowrap',
-              color: tab === t.id ? '#8B5CF6' : '#6B7280',
-              borderBottom: tab === t.id ? '2px solid #8B5CF6' : '2px solid transparent',
+              color: tab === t.id ? '#2563EB' : '#6B7280',
+              borderBottom: tab === t.id ? '2px solid #2563EB' : '2px solid transparent',
               marginBottom: '-2px',
             }}
           >
             {t.label}
             <span style={{
               padding: '0.1rem 0.45rem', borderRadius: '999px', fontSize: '0.72rem', fontWeight: '700',
-              background: tab === t.id ? '#EDE9FE' : '#F3F4F6',
-              color:      tab === t.id ? '#8B5CF6' : '#9CA3AF',
+              background: tab === t.id ? '#DBEAFE' : '#F3F4F6',
+              color:      tab === t.id ? '#2563EB' : '#9CA3AF',
             }}>
               {t.count}
             </span>
@@ -239,7 +239,7 @@ export default function AreasHerramientas() {
               : 'No hay áreas registradas todavía.'}
           </p>
           {!busqueda && tab === 'todas' && (
-            <button onClick={abrirCrear} style={{ ...sBtnInline, color: '#8B5CF6', fontWeight: '700', marginTop: '0.5rem' }}>
+            <button onClick={abrirCrear} style={{ ...sBtnInline, color: '#3BA9FF', fontWeight: '700', marginTop: '0.5rem' }}>
               + Crear la primera área
             </button>
           )}
@@ -283,7 +283,7 @@ export default function AreasHerramientas() {
         <ModalConfirmar
           titulo="Restaurar área"
           mensaje={`¿Restaurar "${pendRestaurar.nombre}"? Volverá a aparecer en la lista de áreas activas.`}
-          etiquetaConfirmar="Sí, restaurar" colorConfirmar="#8B5CF6"
+          etiquetaConfirmar="Sí, restaurar" colorConfirmar="#3BA9FF"
           guardando={guardando} onConfirmar={restaurarArea} onCancelar={() => setPendRestaurar(null)}
         />
       )}
@@ -307,7 +307,7 @@ function AreaCard({ area, onVer, onEditar, onToggleActivo, onArchivar, onRestaur
   onVer: () => void; onEditar: () => void; onToggleActivo: () => void
   onArchivar: () => void; onRestaurar: () => void; onEliminar: () => void
 }) {
-  const borde  = area.archivado ? '#D97706' : area.activo ? '#8B5CF6' : '#9CA3AF'
+  const borde  = area.archivado ? '#D97706' : area.activo ? '#3BA9FF' : '#9CA3AF'
   const grad   = gradienteArea(area.nombre)
   const inicial = area.nombre.charAt(0).toUpperCase()
 
@@ -398,8 +398,8 @@ function Menu3Puntos({ opciones }: {
         onClick={e => { e.stopPropagation(); setAbierto(v => !v) }}
         style={{
           width: '32px', height: '32px', borderRadius: '8px',
-          background: abierto ? '#FAF5FF' : 'transparent',
-          border: abierto ? '1px solid #DDD6FE' : '1px solid transparent',
+          background: abierto ? '#EFF6FF' : 'transparent',
+          border: abierto ? '1px solid #BFDBFE' : '1px solid transparent',
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '1.1rem', color: '#6B7280', fontWeight: '700',
         }}
@@ -468,7 +468,7 @@ function ModalArea({ area, guardando, error, onGuardar, onCerrar }: {
     <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '1.5rem', overflowY: 'auto' }}>
       <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '520px', margin: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', overflow: 'hidden' }}>
 
-        <div style={{ background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)', padding: '1.125rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ background: 'linear-gradient(135deg, #2563EB, #123C7A)', padding: '1.125rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: '700', color: 'white' }}>
             {area ? `Editar: ${area.nombre}` : '+ Nueva área'}
           </h2>
@@ -530,7 +530,7 @@ function ModalArea({ area, guardando, error, onGuardar, onCerrar }: {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <button type="button" onClick={() => setForm(f => ({ ...f, activo: !f.activo }))}
-              style={{ width: '44px', height: '24px', borderRadius: '999px', border: 'none', cursor: 'pointer', position: 'relative', flexShrink: 0, background: form.activo ? '#8B5CF6' : '#D1D5DB', transition: 'background 0.2s' }}>
+              style={{ width: '44px', height: '24px', borderRadius: '999px', border: 'none', cursor: 'pointer', position: 'relative', flexShrink: 0, background: form.activo ? '#3BA9FF' : '#D1D5DB', transition: 'background 0.2s' }}>
               <div style={{ position: 'absolute', top: '3px', width: '18px', height: '18px', borderRadius: '50%', background: 'white', left: form.activo ? '23px' : '3px', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
             </button>
             <span style={{ fontSize: '0.875rem', color: '#374151', fontWeight: '500' }}>
@@ -587,6 +587,6 @@ const sBadge: CSSProperties         = { padding: '0.18rem 0.6rem', borderRadius:
 const sInput: CSSProperties         = { width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1.5px solid #E5E7EB', fontSize: '0.875rem', color: '#111827', outline: 'none', boxSizing: 'border-box', background: 'white' }
 const sLabel: CSSProperties         = { display: 'block', fontSize: '0.78rem', fontWeight: '600', color: '#374151', marginBottom: '0.375rem' }
 const sTxtGris: CSSProperties       = { color: '#9CA3AF', fontSize: '0.875rem', margin: 0 }
-const sBtnPrimario: CSSProperties   = { background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)', color: 'white', border: 'none', borderRadius: '8px', padding: '0.5rem 1.125rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }
+const sBtnPrimario: CSSProperties   = { background: 'linear-gradient(135deg, #2563EB, #123C7A)', color: 'white', border: 'none', borderRadius: '8px', padding: '0.5rem 1.125rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }
 const sBtnSecundario: CSSProperties = { background: 'white', color: '#374151', border: '1.5px solid #E5E7EB', borderRadius: '8px', padding: '0.5rem 1.125rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer' }
-const sBtnInline: CSSProperties     = { background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', padding: 0, color: '#8B5CF6', fontWeight: '600' }
+const sBtnInline: CSSProperties     = { background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', padding: 0, color: '#3BA9FF', fontWeight: '600' }

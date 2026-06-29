@@ -76,8 +76,8 @@ interface ConfigRevision {
 
 // ── Utils ─────────────────────────────────────────────────────────────────────
 const PALETA = [
-  'linear-gradient(135deg, #EC4899, #BE185D)',
-  'linear-gradient(135deg, #7C3AED, #6D28D9)',
+  'linear-gradient(135deg, #3BA9FF, #2563EB)',
+  'linear-gradient(135deg, #123C7A, #0D2554)',
   'linear-gradient(135deg, #0369A1, #0284C7)',
   'linear-gradient(135deg, #DC2626, #B91C1C)',
   'linear-gradient(135deg, #D97706, #B45309)',
@@ -534,7 +534,7 @@ export default function HerramientasPersonal() {
   return (
     <div style={{ padding: '1.5rem' }}>
       <style>{`
-        .her-input:focus { border-color: #8B5CF6 !important; outline: none; box-shadow: 0 0 0 3px rgba(139,92,246,0.12); }
+        .her-input:focus { border-color: #3BA9FF !important; outline: none; box-shadow: 0 0 0 3px rgba(59,169,255,0.12); }
         .area-card { transition: box-shadow 0.18s, transform 0.18s; }
         .area-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.13) !important; transform: translateY(-2px); }
         .col-card { transition: box-shadow 0.15s, transform 0.15s; }
@@ -592,9 +592,9 @@ export default function HerramientasPersonal() {
                   {(['manana', 'noche'] as Turno[]).map(t => (
                     <button key={t} type="button" onClick={() => setFormTurno(t)} style={{
                       flex: 1, padding: '0.5rem', borderRadius: '8px', fontSize: '0.875rem', cursor: 'pointer',
-                      border: `1.5px solid ${formTurno === t ? '#8B5CF6' : '#E5E7EB'}`,
-                      background: formTurno === t ? '#FAF5FF' : 'white',
-                      color: formTurno === t ? '#8B5CF6' : '#6B7280',
+                      border: `1.5px solid ${formTurno === t ? '#3BA9FF' : '#E5E7EB'}`,
+                      background: formTurno === t ? '#EFF6FF' : 'white',
+                      color: formTurno === t ? '#2563EB' : '#6B7280',
                       fontWeight: formTurno === t ? '700' : '500',
                     }}>
                       {TURNO_LABELS[t]}
@@ -683,7 +683,7 @@ function PantallaSectores({ areas, cargando, onEntrar }: {
 
       {cargando ? (
         <div style={{ textAlign: 'center', padding: '4rem 0' }}>
-          <div style={{ display: 'inline-block', width: '36px', height: '36px', border: '3px solid #E5E7EB', borderTopColor: '#8B5CF6', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+          <div style={{ display: 'inline-block', width: '36px', height: '36px', border: '3px solid #E5E7EB', borderTopColor: '#3BA9FF', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
           <p style={{ color: '#9CA3AF', marginTop: '1rem', fontSize: '0.875rem' }}>Cargando sectores...</p>
         </div>
       ) : areas.length === 0 ? (
@@ -718,15 +718,15 @@ function SectorCompacto({ area, onEntrar }: { area: AreaConStats; onEntrar: (a: 
       label: 'Turno Mañana',
     },
     noche: {
-      cardBg:    'linear-gradient(145deg, #F5F3FF, #EDE9FE)',
-      cardBorder: '#A78BFA',
-      headerBg:  'linear-gradient(135deg, #7C3AED, #5B21B6)',
-      labelColor: '#4C1D95',
-      valColor:   '#6D28D9',
+      cardBg:    'linear-gradient(145deg, #EFF6FF, #DBEAFE)',
+      cardBorder: '#93C5FD',
+      headerBg:  'linear-gradient(135deg, #1E40AF, #1E3A8A)',
+      labelColor: '#1E3A8A',
+      valColor:   '#1D4ED8',
       chipBg:    'rgba(255,255,255,0.65)',
-      btnBg:     'linear-gradient(135deg, #7C3AED, #5B21B6)',
-      btnShadow: 'rgba(109,40,217,0.4)',
-      cardShadow:'rgba(139,92,246,0.15)',
+      btnBg:     'linear-gradient(135deg, #1E40AF, #1E3A8A)',
+      btnShadow: 'rgba(30,64,175,0.4)',
+      cardShadow:'rgba(30,64,175,0.15)',
       icon: '🌙',
       label: 'Turno Noche',
     },
@@ -855,8 +855,8 @@ function PantallaPersonal({ area, turno, colaboradores, cargando, configRevision
   onRevisar: (c: Colaborador) => void; onHerramientas: (c: Colaborador) => void
   onReporte: (c: Colaborador) => void; onReporteGeneral: () => void
 }) {
-  const turnoColor = turno === 'manana' ? '#0284C7' : '#6D28D9'
-  const turnoBg    = turno === 'manana' ? '#EFF6FF' : '#EDE9FE'
+  const turnoColor = turno === 'manana' ? '#0284C7' : '#1E40AF'
+  const turnoBg    = turno === 'manana' ? '#EFF6FF' : '#DBEAFE'
 
   // Contar cuántos tienen retraso para mostrarlo en el header
   const conRetraso = configRevision
@@ -927,7 +927,7 @@ function ColaboradorCard({ colaborador: c, configRevision, onRevisar, onHerramie
   return (
     <div className="col-card" style={{ background: 'white', border: `1.5px solid ${tieneRetraso ? '#FECACA' : '#E5E7EB'}`, borderRadius: '14px', padding: '1rem 1.25rem', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.875rem' }}>
-        <div style={{ width: '46px', height: '46px', borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg,#8B5CF6,#7C3AED)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '0.95rem', overflow: 'hidden' }}>
+        <div style={{ width: '46px', height: '46px', borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg,#2563EB,#123C7A)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '0.95rem', overflow: 'hidden' }}>
           {c.foto_url ? <img src={c.foto_url} alt={c.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : iniciales(c.nombre)}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -952,9 +952,9 @@ function ColaboradorCard({ colaborador: c, configRevision, onRevisar, onHerramie
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
-        <BtnAccion label={yaRevisado ? '✅ Revisado' : tieneRetraso ? `⏰ Revisar` : 'Revisar'} color={yaRevisado ? '#16A34A' : tieneRetraso ? '#DC2626' : '#8B5CF6'} onClick={onRevisar} />
-        <BtnAccion label="+ Herramientas" color="#7C3AED" onClick={onHerramientas} />
-        <BtnAccion label="📊 Reporte" color="#6D28D9" onClick={onReporte} />
+        <BtnAccion label={yaRevisado ? '✅ Revisado' : tieneRetraso ? `⏰ Revisar` : 'Revisar'} color={yaRevisado ? '#16A34A' : tieneRetraso ? '#DC2626' : '#2563EB'} onClick={onRevisar} />
+        <BtnAccion label="+ Herramientas" color="#2563EB" onClick={onHerramientas} />
+        <BtnAccion label="📊 Reporte" color="#3BA9FF" onClick={onReporte} />
       </div>
     </div>
   )
@@ -1100,7 +1100,7 @@ function ModalHerramientas({ persona, areaId, onCerrar, onRefresh }: {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.625rem' }}>
                 {asignaciones.map(a => (
                   <div key={a.asignacion_id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.625rem 0.875rem', border: '1px solid #E5E7EB', borderRadius: '10px', background: 'white' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: '#FAF5FF', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: '#EFF6FF', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
                       {a.foto_url ? <img src={a.foto_url} alt={a.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '🔧'}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -1111,9 +1111,9 @@ function ModalHerramientas({ persona, areaId, onCerrar, onRefresh }: {
                         <span>Cant: {editandoId === a.asignacion_id ? (
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
                             <input type="number" min={1} value={editCant} onChange={e => setEditCant(Math.max(1, parseInt(e.target.value) || 1))}
-                              style={{ width: '50px', padding: '0.1rem 0.3rem', border: '1px solid #8B5CF6', borderRadius: '4px', fontSize: '0.75rem' }} />
+                              style={{ width: '50px', padding: '0.1rem 0.3rem', border: '1px solid #3BA9FF', borderRadius: '4px', fontSize: '0.75rem' }} />
                             <button onClick={() => guardarEdit(a.asignacion_id)} disabled={guardEdit}
-                              style={{ background: '#8B5CF6', color: 'white', border: 'none', borderRadius: '4px', padding: '0.15rem 0.4rem', fontSize: '0.7rem', cursor: 'pointer' }}>
+                              style={{ background: '#3BA9FF', color: 'white', border: 'none', borderRadius: '4px', padding: '0.15rem 0.4rem', fontSize: '0.7rem', cursor: 'pointer' }}>
                               {guardEdit ? '...' : '✓'}
                             </button>
                             <button onClick={() => setEditandoId(null)}
@@ -1245,7 +1245,7 @@ function PanelRevisar({ colaborador: c, areaNombre, configRevision, herramientas
       <div className="panel-overlay" onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, backdropFilter: 'blur(2px)' }} />
       <div className="panel-drawer" style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(500px,100vw)', background: 'white', zIndex: 2001, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 40px rgba(0,0,0,0.2)' }}>
 
-        <div style={{ background: tieneRetraso ? 'linear-gradient(135deg,#DC2626,#B91C1C)' : 'linear-gradient(135deg,#8B5CF6,#7C3AED)', padding: '1.25rem 1.5rem', flexShrink: 0 }}>
+        <div style={{ background: tieneRetraso ? 'linear-gradient(135deg,#DC2626,#B91C1C)' : 'linear-gradient(135deg,#2563EB,#123C7A)', padding: '1.25rem 1.5rem', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.875rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
               <div style={{ width: '50px', height: '50px', borderRadius: '50%', flexShrink: 0, background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '1.1rem', overflow: 'hidden' }}>
@@ -1307,7 +1307,7 @@ function PanelRevisar({ colaborador: c, areaNombre, configRevision, herramientas
                   <div key={h.asignacion_id} style={{ border: '1px solid #E5E7EB', borderRadius: '10px', padding: '0.75rem 1rem', background: 'white' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '7px', flexShrink: 0, background: '#FAF5FF', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '7px', flexShrink: 0, background: '#EFF6FF', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>
                           {h.foto_url ? <img src={h.foto_url} alt={h.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '🔧'}
                         </div>
                         <div>
@@ -1318,8 +1318,8 @@ function PanelRevisar({ colaborador: c, areaNombre, configRevision, herramientas
                       {h.estado && (
                         <span style={{
                           fontSize: '0.7rem', fontWeight: '700', padding: '0.2rem 0.5rem', borderRadius: '20px',
-                          background: h.estado === 'tiene' ? '#DCFCE7' : h.estado === 'perdida' ? '#FEE2E2' : h.estado === 'reponer' ? '#FEF3C7' : '#EDE9FE',
-                          color:      h.estado === 'tiene' ? '#16A34A' : h.estado === 'perdida' ? '#DC2626' : h.estado === 'reponer' ? '#D97706' : '#7C3AED',
+                          background: h.estado === 'tiene' ? '#DCFCE7' : h.estado === 'perdida' ? '#FEE2E2' : h.estado === 'reponer' ? '#FEF3C7' : '#EFF6FF',
+                          color:      h.estado === 'tiene' ? '#16A34A' : h.estado === 'perdida' ? '#DC2626' : h.estado === 'reponer' ? '#D97706' : '#2563EB',
                         }}>
                           {h.estado === 'tiene' ? '✅ Tiene' : h.estado === 'perdida' ? '⚠️ Perdido' : h.estado === 'reponer' ? '🔄 Reponer' : '💸 Descuento'}
                         </span>
@@ -1328,7 +1328,7 @@ function PanelRevisar({ colaborador: c, areaNombre, configRevision, herramientas
                     <div style={{ display: 'flex', gap: '0.375rem' }}>
                       {(['tiene', 'perdida', 'reponer', 'descuento'] as const).map(op => {
                         const activo = h.estado === op
-                        const colores: Record<string, string> = { tiene: '#16A34A', perdida: '#DC2626', reponer: '#D97706', descuento: '#7C3AED' }
+                        const colores: Record<string, string> = { tiene: '#16A34A', perdida: '#DC2626', reponer: '#D97706', descuento: '#2563EB' }
                         const col = colores[op]
                         return (
                           <button key={op} className="rev-tog" onClick={() => onEstadoChange(h.asignacion_id, op)}
@@ -1375,10 +1375,10 @@ function PanelRevisar({ colaborador: c, areaNombre, configRevision, herramientas
 const sInput: CSSProperties    = { padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1.5px solid #E5E7EB', fontSize: '0.875rem', color: '#111827', outline: 'none', boxSizing: 'border-box', background: 'white', width: '100%' }
 const sLabel: CSSProperties    = { display: 'block', fontSize: '0.78rem', fontWeight: '600', color: '#374151', marginBottom: '0.375rem' }
 const sTitSec: CSSProperties   = { fontSize: '0.75rem', fontWeight: '700', color: '#374151', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }
-const sBtnPrim: CSSProperties  = { background: 'linear-gradient(135deg,#8B5CF6,#7C3AED)', color: 'white', border: 'none', borderRadius: '8px', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer' }
+const sBtnPrim: CSSProperties  = { background: 'linear-gradient(135deg,#2563EB,#123C7A)', color: 'white', border: 'none', borderRadius: '8px', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer' }
 const sBtnSec: CSSProperties   = { background: 'white', color: '#374151', border: '1.5px solid #E5E7EB', borderRadius: '8px', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer' }
 const sBtnX: CSSProperties     = { background: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', borderRadius: '8px', padding: '0.3rem 0.5rem', cursor: 'pointer', fontSize: '1rem', lineHeight: 1 }
 const sOverlay: CSSProperties  = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, backdropFilter: 'blur(2px)' }
 const sModalBox: CSSProperties = { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'min(440px,calc(100vw - 2rem))', background: 'white', borderRadius: '16px', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', zIndex: 2001, overflow: 'hidden' }
-const sModalHdr: CSSProperties = { background: 'linear-gradient(135deg,#8B5CF6,#7C3AED)', padding: '1.125rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }
+const sModalHdr: CSSProperties = { background: 'linear-gradient(135deg,#2563EB,#123C7A)', padding: '1.125rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }
 const sErrMsg: CSSProperties   = { color: '#DC2626', fontSize: '0.82rem', margin: 0, background: '#FEE2E2', padding: '0.5rem 0.75rem', borderRadius: '8px' }
