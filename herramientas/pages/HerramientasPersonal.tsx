@@ -127,6 +127,21 @@ function revisadoHoy(ultimaRevision: string | null): boolean {
   return ultimaRevision.split('T')[0] === hoy
 }
 
+function calcularRetraso(cfg: ConfigRevision, ultimaRevision: string | null): { diasRetraso: number; fechaEsperada: string } {
+  const diaJS = cfg.dia_revision_personal === 7 ? 0 : cfg.dia_revision_personal
+  const hoy   = new Date()
+  let diasDesde = hoy.getDay() - diaJS
+  if (diasDesde < 0) diasDesde += 7
+  const esperada = new Date(hoy)
+  esperada.setDate(hoy.getDate() - diasDesde)
+  const fechaEsperada = esperada.toISOString().split('T')[0]
+  if (ultimaRevision) {
+    const ultima = new Date(ultimaRevision.split('T')[0])
+    if (ultima >= esperada) return { diasRetraso: 0, fechaEsperada }
+  }
+  return { diasRetraso: diasDesde, fechaEsperada }
+}
+
 // ── Componente principal ──────────────────────────────────────────────────────
 export default function HerramientasPersonal() {
   const [vista,       setVista]       = useState<'sectores' | 'personal'>('sectores')
@@ -395,6 +410,11 @@ export default function HerramientasPersonal() {
     const hoy    = new Date().toISOString().split('T')[0]
     const manana = new Date(Date.now() + 86400000).toISOString().split('T')[0]
 
+    // Calcular retraso respecto al día configurado
+    const { diasRetraso, fechaEsperada } = configRevision
+      ? calcularRetraso(configRevision, revisar.ultimaRevision)
+      : { diasRetraso: 0, fechaEsperada: hoy }
+
     const { data: existRevs } = await supabase
       .from('herramientas_revisiones')
       .select('id')
@@ -409,13 +429,24 @@ export default function HerramientasPersonal() {
     if (existRevs && existRevs.length > 0) {
       revisionId = (existRevs[0] as { id: string }).id
       await Promise.all([
-        supabase.from('herramientas_revisiones').update({ observaciones: observaciones || null }).eq('id', revisionId),
+        supabase.from('herramientas_revisiones').update({
+          observaciones:  observaciones || null,
+          dias_retraso:   diasRetraso,
+          fecha_esperada: fechaEsperada,
+        }).eq('id', revisionId),
         supabase.from('herramientas_revision_detalle').delete().eq('revision_id', revisionId),
       ])
     } else {
       const { data: revData, error: revErr } = await supabase
         .from('herramientas_revisiones')
-        .insert({ tipo: 'personal', personal_id: revisar.id, revisado_por: 'Admin', observaciones: observaciones || null })
+        .insert({
+          tipo:           'personal',
+          personal_id:    revisar.id,
+          revisado_por:   'Admin',
+          observaciones:  observaciones || null,
+          dias_retraso:   diasRetraso,
+          fecha_esperada: fechaEsperada,
+        })
         .select('id')
         .single()
       if (revErr || !revData) {
@@ -502,6 +533,7 @@ export default function HerramientasPersonal() {
             turno={turnoActivo}
             colaboradores={colaboradores}
             cargando={cargandoPersonal}
+            configRevision={configRevision}
             onVolver={volverSectores}
             onAbrirNuevo={() => { setFormNombre(''); setFormTurno(turnoActivo); setErrForm(''); setModalNuevo(true) }}
             onRevisar={abrirPanel}
@@ -887,14 +919,20 @@ function SectorDetalle({ area, onEntrar }: { area: AreaConStats; onEntrar: (a: A
 }
 
 // ── Pantalla 2: Personal del sector/turno ─────────────────────────────────────
-function PantallaPersonal({ area, turno, colaboradores, cargando, onVolver, onAbrirNuevo, onRevisar, onHerramientas, onReporte, onReporteGeneral }: {
+function PantallaPersonal({ area, turno, colaboradores, cargando, configRevision, onVolver, onAbrirNuevo, onRevisar, onHerramientas, onReporte, onReporteGeneral }: {
   area: AreaConStats; turno: Turno; colaboradores: Colaborador[]; cargando: boolean
+  configRevision: ConfigRevision | null
   onVolver: () => void; onAbrirNuevo: () => void
   onRevisar: (c: Colaborador) => void; onHerramientas: (c: Colaborador) => void
   onReporte: (c: Colaborador) => void; onReporteGeneral: () => void
 }) {
   const turnoColor = turno === 'manana' ? '#0284C7' : '#6D28D9'
   const turnoBg    = turno === 'manana' ? '#EFF6FF' : '#EDE9FE'
+
+  // Contar cuántos tienen retraso para mostrarlo en el header
+  const conRetraso = configRevision
+    ? colaboradores.filter(c => !revisadoHoy(c.ultimaRevision) && calcularRetraso(configRevision, c.ultimaRevision).diasRetraso > 0).length
+    : 0
 
   return (
     <>
@@ -911,9 +949,16 @@ function PantallaPersonal({ area, turno, colaboradores, cargando, onVolver, onAb
         </h1>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <p style={{ margin: 0, fontSize: '0.82rem', color: '#9CA3AF' }}>
-          {cargando ? 'Cargando...' : `${colaboradores.length} ${colaboradores.length === 1 ? 'colaborador' : 'colaboradores'} — turno ${TURNO_SIMPLE[turno].toLowerCase()}`}
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap' }}>
+          <p style={{ margin: 0, fontSize: '0.82rem', color: '#9CA3AF' }}>
+            {cargando ? 'Cargando...' : `${colaboradores.length} ${colaboradores.length === 1 ? 'colaborador' : 'colaboradores'} — turno ${TURNO_SIMPLE[turno].toLowerCase()}`}
+          </p>
+          {!cargando && conRetraso > 0 && (
+            <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#DC2626', background: '#FEE2E2', padding: '0.2rem 0.6rem', borderRadius: '20px' }}>
+              ⏰ {conRetraso} con retraso
+            </span>
+          )}
+        </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button onClick={onReporteGeneral} style={{ ...sBtnSec, fontSize: '0.8rem', padding: '0.4rem 0.875rem' }}>📊 Reporte general</button>
           <button onClick={onAbrirNuevo} style={sBtnPrim}>+ Añadir personal</button>
@@ -930,7 +975,7 @@ function PantallaPersonal({ area, turno, colaboradores, cargando, onVolver, onAb
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {colaboradores.map(c => (
-            <ColaboradorCard key={c.id} colaborador={c} onRevisar={() => onRevisar(c)} onHerramientas={() => onHerramientas(c)} onReporte={() => onReporte(c)} />
+            <ColaboradorCard key={c.id} colaborador={c} configRevision={configRevision} onRevisar={() => onRevisar(c)} onHerramientas={() => onHerramientas(c)} onReporte={() => onReporte(c)} />
           ))}
         </div>
       )}
@@ -938,15 +983,20 @@ function PantallaPersonal({ area, turno, colaboradores, cargando, onVolver, onAb
   )
 }
 
-function ColaboradorCard({ colaborador: c, onRevisar, onHerramientas, onReporte }: {
-  colaborador: Colaborador; onRevisar: () => void; onHerramientas: () => void; onReporte: () => void
+function ColaboradorCard({ colaborador: c, configRevision, onRevisar, onHerramientas, onReporte }: {
+  colaborador: Colaborador; configRevision: ConfigRevision | null
+  onRevisar: () => void; onHerramientas: () => void; onReporte: () => void
 }) {
-  const estadoColor  = c.estado === 'con_faltantes' ? '#DC2626' : c.estado === 'en_reposicion' ? '#D97706' : c.totalHerramientas === 0 ? '#9CA3AF' : '#16A34A'
-  const estadoLabel  = c.estado === 'con_faltantes' ? 'Con faltantes' : c.estado === 'en_reposicion' ? 'En reposición' : c.totalHerramientas === 0 ? 'Sin herramientas' : 'Sin novedades'
-  const yaRevisado   = revisadoHoy(c.ultimaRevision)
+  const estadoColor = c.estado === 'con_faltantes' ? '#DC2626' : c.estado === 'en_reposicion' ? '#D97706' : c.totalHerramientas === 0 ? '#9CA3AF' : '#16A34A'
+  const estadoLabel = c.estado === 'con_faltantes' ? 'Con faltantes' : c.estado === 'en_reposicion' ? 'En reposición' : c.totalHerramientas === 0 ? 'Sin herramientas' : 'Sin novedades'
+  const yaRevisado  = revisadoHoy(c.ultimaRevision)
+  const { diasRetraso } = configRevision && !yaRevisado
+    ? calcularRetraso(configRevision, c.ultimaRevision)
+    : { diasRetraso: 0 }
+  const tieneRetraso = diasRetraso > 0
 
   return (
-    <div className="col-card" style={{ background: 'white', border: '1.5px solid #E5E7EB', borderRadius: '14px', padding: '1rem 1.25rem', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+    <div className="col-card" style={{ background: 'white', border: `1.5px solid ${tieneRetraso ? '#FECACA' : '#E5E7EB'}`, borderRadius: '14px', padding: '1rem 1.25rem', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.875rem' }}>
         <div style={{ width: '46px', height: '46px', borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg,#0D9488,#0F766E)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '0.95rem', overflow: 'hidden' }}>
           {c.foto_url ? <img src={c.foto_url} alt={c.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : iniciales(c.nombre)}
@@ -959,16 +1009,21 @@ function ColaboradorCard({ colaborador: c, onRevisar, onHerramientas, onReporte 
             {c.totalSolicitudes > 0 && <span style={{ fontSize: '0.7rem', color: '#D97706' }}>📋 {c.totalSolicitudes} sol.</span>}
             <span style={{ fontSize: '0.7rem', fontWeight: '700', color: estadoColor, background: estadoColor + '18', padding: '0.15rem 0.5rem', borderRadius: '20px' }}>● {estadoLabel}</span>
           </div>
-          <div style={{ fontSize: '0.72rem', marginTop: '0.15rem' }}>
-            {yaRevisado
-              ? <span style={{ color: '#16A34A', fontWeight: '600' }}>✅ Revisado hoy</span>
-              : <span style={{ color: '#9CA3AF' }}>📅 Última revisión: {formatFechaCorta(c.ultimaRevision)}</span>
-            }
+          <div style={{ fontSize: '0.72rem', marginTop: '0.2rem' }}>
+            {yaRevisado ? (
+              <span style={{ color: '#16A34A', fontWeight: '600' }}>✅ Revisado hoy</span>
+            ) : tieneRetraso ? (
+              <span style={{ color: '#DC2626', fontWeight: '700' }}>
+                ⏰ {diasRetraso} día{diasRetraso > 1 ? 's' : ''} de retraso — última revisión: {formatFechaCorta(c.ultimaRevision)}
+              </span>
+            ) : (
+              <span style={{ color: '#9CA3AF' }}>📅 Última revisión: {formatFechaCorta(c.ultimaRevision)}</span>
+            )}
           </div>
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
-        <BtnAccion label={yaRevisado ? '✅ Revisado' : 'Revisar'} color={yaRevisado ? '#16A34A' : '#0D9488'} onClick={onRevisar} />
+        <BtnAccion label={yaRevisado ? '✅ Revisado' : tieneRetraso ? `⏰ Revisar` : 'Revisar'} color={yaRevisado ? '#16A34A' : tieneRetraso ? '#DC2626' : '#0D9488'} onClick={onRevisar} />
         <BtnAccion label="+ Herramientas" color="#7C3AED" onClick={onHerramientas} />
         <BtnAccion label="📊 Reporte" color="#6D28D9" onClick={onReporte} />
       </div>
@@ -1249,18 +1304,22 @@ interface PanelProps {
 }
 
 function PanelRevisar({ colaborador: c, areaNombre, configRevision, herramientas, cargandoPanel, onEstadoChange, observaciones, setObservaciones, guardando, guardado, errGuardar, onGuardar, onCerrar }: PanelProps) {
-  const perdidas       = herramientas.filter(h => h.estado === 'perdida').length
-  const reponer        = herramientas.filter(h => h.estado === 'reponer').length
-  const descuento      = herramientas.filter(h => h.estado === 'descuento').length
-  const revResult      = configRevision ? calcularProximaRevision(configRevision) : null
-  const yaRevisadoHoy  = revisadoHoy(c.ultimaRevision)
+  const perdidas      = herramientas.filter(h => h.estado === 'perdida').length
+  const reponer       = herramientas.filter(h => h.estado === 'reponer').length
+  const descuento     = herramientas.filter(h => h.estado === 'descuento').length
+  const revResult     = configRevision ? calcularProximaRevision(configRevision) : null
+  const yaRevisadoHoy = revisadoHoy(c.ultimaRevision)
+  const { diasRetraso, fechaEsperada } = configRevision && !yaRevisadoHoy
+    ? calcularRetraso(configRevision, c.ultimaRevision)
+    : { diasRetraso: 0, fechaEsperada: new Date().toISOString().split('T')[0] }
+  const tieneRetraso = diasRetraso > 0
 
   return (
     <>
       <div className="panel-overlay" onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, backdropFilter: 'blur(2px)' }} />
       <div className="panel-drawer" style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(500px,100vw)', background: 'white', zIndex: 2001, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 40px rgba(0,0,0,0.2)' }}>
 
-        <div style={{ background: 'linear-gradient(135deg,#0D9488,#0F766E)', padding: '1.25rem 1.5rem', flexShrink: 0 }}>
+        <div style={{ background: tieneRetraso ? 'linear-gradient(135deg,#DC2626,#B91C1C)' : 'linear-gradient(135deg,#0D9488,#0F766E)', padding: '1.25rem 1.5rem', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.875rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
               <div style={{ width: '50px', height: '50px', borderRadius: '50%', flexShrink: 0, background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '1.1rem', overflow: 'hidden' }}>
@@ -1269,33 +1328,40 @@ function PanelRevisar({ colaborador: c, areaNombre, configRevision, herramientas
               <div>
                 <div style={{ color: 'white', fontWeight: '800', fontSize: '1rem' }}>{c.nombre}</div>
                 <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.8rem', marginTop: '0.15rem' }}>📍 {areaNombre ?? 'Sin sector'}</div>
-                {revResult ? (
-                  <div style={{ fontSize: '0.72rem', marginTop: '0.2rem' }}>
-                    {yaRevisadoHoy && revResult.esHoy ? (
-                      <span style={{ color: '#DCFCE7', fontWeight: '700' }}>✅ Revisado hoy</span>
-                    ) : revResult.esHoy ? (
+                <div style={{ fontSize: '0.72rem', marginTop: '0.2rem' }}>
+                  {yaRevisadoHoy ? (
+                    <span style={{ color: '#DCFCE7', fontWeight: '700' }}>✅ Revisado hoy</span>
+                  ) : tieneRetraso ? (
+                    <span style={{ color: '#FCA5A5', fontWeight: '700' }}>
+                      ⏰ {diasRetraso} día{diasRetraso > 1 ? 's' : ''} de retraso · debía revisarse el {new Date(fechaEsperada + 'T12:00:00').toLocaleDateString('es-BO', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    </span>
+                  ) : revResult ? (
+                    revResult.esHoy ? (
                       <span style={{ color: 'rgba(255,255,255,0.7)' }}>
                         📅 Hoy
                         {configRevision?.hora_inicio_personal && ` · ${formatHora(configRevision.hora_inicio_personal)}`}
-                        {configRevision?.hora_fin_personal && ` – ${formatHora(configRevision.hora_fin_personal)}`}
+                        {configRevision?.hora_fin_personal    && ` – ${formatHora(configRevision.hora_fin_personal)}`}
                       </span>
                     ) : (
                       <span style={{ color: 'rgba(255,255,255,0.7)' }}>
-                        📅 {revResult.texto}
+                        📅 Próxima: {revResult.texto}
                         {configRevision?.hora_inicio_personal && ` · ${formatHora(configRevision.hora_inicio_personal)}`}
-                        {configRevision?.hora_fin_personal && ` – ${formatHora(configRevision.hora_fin_personal)}`}
+                        {configRevision?.hora_fin_personal    && ` – ${formatHora(configRevision.hora_fin_personal)}`}
                       </span>
-                    )}
-                  </div>
-                ) : (
-                  <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.72rem', marginTop: '0.2rem' }}>
-                    ⚙️ Sin horario · Ve a Configuración
-                  </div>
-                )}
+                    )
+                  ) : (
+                    <span style={{ color: 'rgba(255,255,255,0.55)' }}>⚙️ Sin horario · Ve a Configuración</span>
+                  )}
+                </div>
               </div>
             </div>
             <button onClick={onCerrar} style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', color: 'white', borderRadius: '8px', padding: '0.375rem 0.5rem', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, flexShrink: 0 }}>✕</button>
           </div>
+          {tieneRetraso && (
+            <div style={{ background: 'rgba(0,0,0,0.15)', borderRadius: '10px', padding: '0.5rem 0.875rem', marginBottom: '0.875rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)' }}>
+              ℹ️ Al guardar esta revisión se registrarán <strong>{diasRetraso} día{diasRetraso > 1 ? 's' : ''} de retraso</strong> en el historial.
+            </div>
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', background: 'rgba(255,255,255,0.12)', borderRadius: '10px', padding: '0.625rem 0.75rem' }}>
             {[
