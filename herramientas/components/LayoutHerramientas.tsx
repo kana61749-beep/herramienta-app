@@ -7,8 +7,6 @@ const NAV_LINKS = [
   { to: '/herramientas',               label: 'Inicio',                icon: '🏠', end: true  },
   { to: '/herramientas/areas',         label: 'Herramientas Áreas',    icon: '🗂️', end: false },
   { to: '/herramientas/personal',      label: 'Herramientas Personal', icon: '👥', end: false },
-  { to: '/herramientas/solicitudes',   label: 'Solicitudes',           icon: '📄', end: false },
-  { to: '/herramientas/perdidas',      label: 'Pérdidas',              icon: '⚠️', end: false },
   { to: '/herramientas/reportes',      label: 'Reportes',              icon: '📊', end: false },
   { to: '/herramientas/configuracion', label: 'Configuración',         icon: '⚙️', end: false },
 ]
