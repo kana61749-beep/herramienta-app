@@ -84,6 +84,9 @@ export default function ReportePersonal({ persona, areaNombre, onCerrar, onRefre
   const [confirmElim,      setConfirmElim]      = useState<Periodo | null>(null)
   const [eliminando,       setEliminando]       = useState(false)
   const [errElim,          setErrElim]          = useState('')
+  const [confirmLimpiar,   setConfirmLimpiar]   = useState(false)
+  const [limpiando,        setLimpiando]        = useState(false)
+  const [errLimpiar,       setErrLimpiar]       = useState('')
 
   useEffect(() => { cargar() }, [])
   useEffect(() => { if (historialAbierto) cargarHistorial() }, [periodoHist, historialAbierto]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -253,6 +256,51 @@ export default function ReportePersonal({ persona, areaNombre, onCerrar, onRefre
     setEliminando(false)
     onRefresh?.()
     await Promise.all([cargar(), cargarHistorial()])
+  }
+
+  async function limpiarIncidencias() {
+    setLimpiando(true)
+    setErrLimpiar('')
+
+    const { data: asigs, error: selErr } = await supabase
+      .from('herramientas_asignaciones')
+      .select('id')
+      .eq('personal_id', persona.id)
+      .is('fecha_devolucion', null)
+      .in('estado', ['perdida', 'descuento', 'reponer'])
+
+    if (selErr) {
+      setErrLimpiar('Error al buscar asignaciones: ' + selErr.message)
+      setLimpiando(false)
+      return
+    }
+
+    const ids = (asigs ?? []).map((a: Record<string, unknown>) => a.id as string)
+
+    if (ids.length === 0) {
+      setConfirmLimpiar(false)
+      setLimpiando(false)
+      await cargar()
+      return
+    }
+
+    await supabase.from('herramientas_perdidas').delete().in('asignacion_id', ids)
+
+    const { error: updErr } = await supabase
+      .from('herramientas_asignaciones')
+      .update({ estado: 'asignada' })
+      .in('id', ids)
+
+    if (updErr) {
+      setErrLimpiar('Error al actualizar asignaciones: ' + updErr.message)
+      setLimpiando(false)
+      return
+    }
+
+    setConfirmLimpiar(false)
+    setLimpiando(false)
+    onRefresh?.()
+    await cargar()
   }
 
   const incPerdidas   = asignaciones.filter(a => a.estado === 'perdida')
@@ -569,6 +617,37 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
                   <div style={{ marginTop: '0.5rem', padding: '0.625rem 0.875rem', background: '#EDE9FE', border: '1px solid #DDD6FE', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '0.82rem', color: '#5B21B6', fontWeight: '600' }}>💰 Total descuentos este mes</span>
                     <span style={{ fontSize: '1rem', fontWeight: '800', color: '#7C3AED' }}>{formatBs(totalDescuentosMes)}</span>
+                  </div>
+                )}
+                {asignaciones.length > 0 && !confirmLimpiar && (
+                  <button
+                    onClick={() => setConfirmLimpiar(true)}
+                    style={{ marginTop: '0.5rem', width: '100%', padding: '0.45rem 0.875rem', border: '1.5px solid #FCD34D', background: 'white', color: '#92400E', borderRadius: '8px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}
+                  >
+                    🧹 Limpiar incidencias actuales
+                  </button>
+                )}
+                {confirmLimpiar && (
+                  <div style={{ marginTop: '0.5rem', background: '#FFFBEB', border: '1.5px solid #FCD34D', borderRadius: '10px', padding: '0.875rem' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#92400E', marginBottom: '0.375rem' }}>
+                      ¿Limpiar todas las incidencias activas?
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: '#6B7280', marginBottom: '0.75rem' }}>
+                      Se resetearán {asignaciones.length} asignación{asignaciones.length !== 1 ? 'es' : ''} (pérdidas, descuentos y reponer → tiene). No se borra historial ni datos del personal.
+                    </div>
+                    {errLimpiar && (
+                      <div style={{ fontSize: '0.75rem', color: '#DC2626', background: '#FEE2E2', borderRadius: '6px', padding: '0.4rem 0.6rem', marginBottom: '0.5rem' }}>
+                        ⚠️ {errLimpiar}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button onClick={() => { setConfirmLimpiar(false); setErrLimpiar('') }} disabled={limpiando} style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: '1px solid #E5E7EB', background: 'white', color: '#374151', fontWeight: '600', fontSize: '0.78rem', cursor: limpiando ? 'default' : 'pointer', opacity: limpiando ? 0.6 : 1 }}>
+                        Cancelar
+                      </button>
+                      <button onClick={limpiarIncidencias} disabled={limpiando} style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: 'none', background: '#F59E0B', color: 'white', fontWeight: '700', fontSize: '0.78rem', cursor: limpiando ? 'wait' : 'pointer', opacity: limpiando ? 0.7 : 1 }}>
+                        {limpiando ? 'Limpiando...' : 'Sí, limpiar'}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
