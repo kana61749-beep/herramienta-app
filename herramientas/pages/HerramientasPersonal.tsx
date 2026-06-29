@@ -676,53 +676,155 @@ function PantallaSectores({ areas, cargando, onEntrar }: {
   )
 }
 
-/* Tarjeta de sector con turno Mañana y Noche */
+/* Tarjeta de sector con turno Mañana y Noche — diseño moderno */
 function SectorCompacto({ area, onEntrar }: { area: AreaConStats; onEntrar: (a: AreaConStats, t: Turno) => void }) {
+  const hayPerdidas = area.totalPerdidas > 0
+
+  const TURNO_CFG = {
+    manana: {
+      cardBg:    'linear-gradient(145deg, #FFFBEB, #FEF3C7)',
+      cardBorder: '#FCD34D',
+      headerBg:  'linear-gradient(135deg, #F59E0B, #D97706)',
+      labelColor: '#92400E',
+      valColor:   '#B45309',
+      chipBg:    'rgba(255,255,255,0.65)',
+      btnBg:     'linear-gradient(135deg, #F59E0B, #D97706)',
+      btnShadow: 'rgba(217,119,6,0.4)',
+      cardShadow:'rgba(251,191,36,0.18)',
+      icon: '☀️',
+      label: 'Turno Mañana',
+    },
+    noche: {
+      cardBg:    'linear-gradient(145deg, #F5F3FF, #EDE9FE)',
+      cardBorder: '#A78BFA',
+      headerBg:  'linear-gradient(135deg, #7C3AED, #5B21B6)',
+      labelColor: '#4C1D95',
+      valColor:   '#6D28D9',
+      chipBg:    'rgba(255,255,255,0.65)',
+      btnBg:     'linear-gradient(135deg, #7C3AED, #5B21B6)',
+      btnShadow: 'rgba(109,40,217,0.4)',
+      cardShadow:'rgba(139,92,246,0.15)',
+      icon: '🌙',
+      label: 'Turno Noche',
+    },
+  } as const
+
   return (
-    <div style={{ background: 'white', borderRadius: '14px', border: '1.5px solid #F3F4F6', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-      {/* Cabecera del sector */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', padding: '0.875rem 1.125rem', borderBottom: '1px solid #F9FAFB' }}>
-        <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: gradienteArea(area.nombre), display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '1rem', flexShrink: 0 }}>
+    <div style={{
+      background: 'white',
+      borderRadius: '22px',
+      boxShadow: '0 6px 28px rgba(0,0,0,0.09)',
+      border: '1px solid #EFEFEF',
+      overflow: 'hidden',
+    }}>
+      {/* ── Cabecera del sector ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '1rem',
+        padding: '1rem 1.25rem',
+        background: 'linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%)',
+        borderBottom: '1px solid #E5E7EB',
+      }}>
+        <div style={{
+          width: '46px', height: '46px', borderRadius: '13px',
+          background: gradienteArea(area.nombre),
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'white', fontWeight: '800', fontSize: '1.15rem', flexShrink: 0,
+          boxShadow: '0 3px 10px rgba(0,0,0,0.18)',
+        }}>
           {area.nombre.charAt(0).toUpperCase()}
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: '700', color: '#111827', fontSize: '0.9rem' }}>{area.nombre}</div>
-          <div style={{ fontSize: '0.73rem', color: '#9CA3AF' }}>
-            👤 {area.totalPersonal} · 🔧 {area.totalHerramientas}
-            {area.totalPerdidas > 0 && <span style={{ color: '#DC2626', fontWeight: '600' }}> · ⚠️ {area.totalPerdidas}</span>}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: '800', color: '#111827', fontSize: '1rem', letterSpacing: '-0.015em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {area.nombre}
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '0.1rem' }}>
+            {area.totalPersonal} personas · {area.totalHerramientas} herramientas
           </div>
         </div>
-        <span style={{ fontSize: '0.68rem', fontWeight: '700', padding: '0.25rem 0.6rem', borderRadius: '20px', background: area.totalPerdidas > 0 ? '#FEE2E2' : '#DCFCE7', color: area.totalPerdidas > 0 ? '#DC2626' : '#16A34A' }}>
-          {area.totalPerdidas > 0 ? '⚠️ Faltantes' : '✅ OK'}
+        <span style={{
+          fontSize: '0.69rem', fontWeight: '700', padding: '0.3rem 0.7rem', borderRadius: '20px',
+          background: hayPerdidas ? '#FEE2E2' : '#DCFCE7',
+          color: hayPerdidas ? '#DC2626' : '#15803D',
+          boxShadow: hayPerdidas ? '0 1px 4px rgba(220,38,38,0.2)' : '0 1px 4px rgba(22,163,74,0.2)',
+          flexShrink: 0,
+        }}>
+          {hayPerdidas ? `⚠️ ${area.totalPerdidas}` : '✅ OK'}
         </span>
       </div>
-      {/* Fila de turnos */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-        {(['manana', 'noche'] as Turno[]).map((t, i) => {
+
+      {/* ── Subtarjetas de turno ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', padding: '0.875rem' }}>
+        {(['manana', 'noche'] as Turno[]).map(t => {
           const st  = area.turnoStats[t]
-          const esM = t === 'manana'
-          const clr = esM ? '#0284C7' : '#7C3AED'
-          const bg  = esM ? '#EFF6FF'  : '#EDE9FE'
+          const cfg = TURNO_CFG[t]
           return (
-            <div key={t} style={{ padding: '0.75rem 1rem', borderRight: i === 0 ? '1px solid #F3F4F6' : 'none' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.375rem' }}>
-                <span style={{ fontSize: '0.875rem' }}>{esM ? '🌅' : '🌙'}</span>
-                <span style={{ fontSize: '0.73rem', fontWeight: '700', color: clr }}>Turno {esM ? 'Mañana' : 'Noche'}</span>
+            <div key={t} style={{
+              background: cfg.cardBg,
+              borderRadius: '16px',
+              border: `1.5px solid ${cfg.cardBorder}`,
+              overflow: 'hidden',
+              boxShadow: `0 3px 14px ${cfg.cardShadow}`,
+            }}>
+              {/* Header del turno */}
+              <div style={{
+                background: cfg.headerBg,
+                padding: '0.6rem 0.875rem',
+                display: 'flex', alignItems: 'center', gap: '0.45rem',
+              }}>
+                <span style={{ fontSize: '1rem', lineHeight: 1 }}>{cfg.icon}</span>
+                <span style={{ color: 'white', fontWeight: '800', fontSize: '0.78rem', letterSpacing: '0.01em' }}>
+                  {cfg.label}
+                </span>
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.625rem', flexWrap: 'wrap' }}>
+
+              {/* Stats */}
+              <div style={{ padding: '0.65rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                 {[
-                  { ico: '👤', val: st.personal },
-                  { ico: '🔧', val: st.herramientas },
-                  { ico: '⚠️', val: st.perdidas },
-                ].map(x => (
-                  <span key={x.ico} style={{ fontSize: '0.72rem', fontWeight: '600', color: (x.ico === '⚠️' && x.val > 0) ? '#DC2626' : '#6B7280', background: (x.ico === '⚠️' && x.val > 0) ? '#FEE2E2' : bg, padding: '0.2rem 0.45rem', borderRadius: '6px' }}>
-                    {x.ico} {x.val}
-                  </span>
+                  { label: 'Personal',      val: st.personal,     alerta: false },
+                  { label: 'Herramientas',  val: st.herramientas, alerta: false },
+                  { label: 'Pérdidas',      val: st.perdidas,     alerta: st.perdidas > 0 },
+                ].map(row => (
+                  <div key={row.label} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    background: row.alerta ? '#FEE2E2' : cfg.chipBg,
+                    borderRadius: '8px',
+                    padding: '0.3rem 0.55rem',
+                    border: row.alerta ? '1px solid #FECACA' : '1px solid rgba(0,0,0,0.05)',
+                  }}>
+                    <span style={{ fontSize: '0.7rem', color: row.alerta ? '#B91C1C' : '#6B7280', fontWeight: '500' }}>
+                      {row.label}
+                    </span>
+                    <span style={{
+                      fontSize: '0.88rem', fontWeight: '800',
+                      color: row.alerta ? '#DC2626' : cfg.valColor,
+                    }}>
+                      {row.val}
+                    </span>
+                  </div>
                 ))}
               </div>
-              <button onClick={() => onEntrar(area, t)} style={{ width: '100%', background: clr, color: 'white', border: 'none', borderRadius: '8px', padding: '0.45rem 0.5rem', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>
-                Ingresar →
-              </button>
+
+              {/* Botón Ingresar */}
+              <div style={{ padding: '0 0.75rem 0.75rem' }}>
+                <button
+                  onClick={() => onEntrar(area, t)}
+                  style={{
+                    width: '100%',
+                    background: cfg.btnBg,
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '0.575rem 0.5rem',
+                    fontSize: '0.78rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    letterSpacing: '0.01em',
+                    boxShadow: `0 3px 10px ${cfg.btnShadow}`,
+                  }}
+                >
+                  Ingresar →
+                </button>
+              </div>
             </div>
           )
         })}
