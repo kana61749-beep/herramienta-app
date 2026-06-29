@@ -45,23 +45,16 @@ function formatBs(v: number) { return `Bs ${v.toFixed(2)}` }
 function formatFecha(iso: string) {
   return new Date(iso).toLocaleDateString('es-BO', { day: 'numeric', month: 'short', year: 'numeric' })
 }
+function formatFechaCorta(iso: string) {
+  const d = new Date(iso + 'T12:00:00')
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(2)}`
+}
 function startOf(p: Periodo) {
   if (p === 'semana') return semStr()
   if (p === 'mes') return mesStr()
   return anioStr()
 }
-function agruparDescuentosMes(items: AsigIncidencia[]) {
-  const mes = mesStr()
-  const filtrados = items.filter(a => a.fecha_reporte && a.fecha_reporte >= mes)
-  const mapa = new Map<string, { count: number; total: number }>()
-  for (const a of filtrados) {
-    const prev = mapa.get(a.nombre) ?? { count: 0, total: 0 }
-    mapa.set(a.nombre, { count: prev.count + 1, total: prev.total + a.monto_descuento })
-  }
-  return Array.from(mapa.entries())
-    .map(([nombre, { count, total }]) => ({ nombre, count, total }))
-    .sort((a, b) => b.total - a.total)
-}
+
 function estadoLabel(e: Categoria) {
   return e === 'perdida' ? 'Activa' : e === 'descuento' ? 'Descontado' : 'Por reponer'
 }
@@ -202,68 +195,6 @@ export default function ReportePersonal({ persona, areaNombre, onCerrar }: Props
 
   const hoy = new Date().toISOString().split('T')[0]
 
-  // ── PDF general (3 categorías) ──────────────────────────────────────────────
-  function generarPDF() {
-    const detalleDesc = agruparDescuentosMes(incDescuentos)
-    const win = window.open('', '_blank')
-    if (!win) return
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
-<title>Reporte — ${persona.nombre}</title>
-<style>
-body{font-family:Arial,sans-serif;padding:2rem;color:#111;max-width:700px;margin:0 auto}
-h1{color:#7C3AED;margin-bottom:0.25rem}
-h2{color:#374151;font-size:1rem;border-bottom:2px solid #E5E7EB;padding-bottom:0.4rem;margin-top:1.5rem}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin:1rem 0}
-.stat{background:#FAF5FF;border:1px solid #E9D5FF;border-radius:8px;padding:0.6rem;text-align:center}
-.stat .val{font-size:1.3rem;font-weight:800;color:#7C3AED}
-.stat .lbl{font-size:0.7rem;color:#6B7280;margin-top:0.15rem}
-table{width:100%;border-collapse:collapse;font-size:0.85rem;margin-top:0.5rem}
-th{background:#F9FAFB;text-align:left;padding:0.5rem;border:1px solid #E5E7EB;font-weight:600}
-td{padding:0.5rem;border:1px solid #E5E7EB}
-.total{background:#EDE9FE;border:1px solid #DDD6FE;border-radius:6px;padding:0.5rem 0.875rem;margin:0.5rem 0;display:flex;justify-content:space-between;font-weight:700}
-.pie{margin-top:2rem;font-size:0.75rem;color:#9CA3AF;border-top:1px solid #E5E7EB;padding-top:1rem}
-</style></head><body>
-<h1>📊 Reporte de Herramientas</h1>
-<p style="color:#6B7280;margin-top:0">Colaborador: <strong>${persona.nombre}</strong> &nbsp;·&nbsp; Sector: <strong>${areaNombre ?? '—'}</strong> &nbsp;·&nbsp; Fecha: <strong>${formatFecha(hoy)}</strong></p>
-<h2>Estado actual</h2>
-<div class="stats">
-  <div class="stat"><div class="val" style="color:#DC2626">${incPerdidas.length}</div><div class="lbl">⚠️ Pérdidas activas</div></div>
-  <div class="stat"><div class="val" style="color:#7C3AED">${incDescuentos.length}</div><div class="lbl">💸 Descuentos</div></div>
-  <div class="stat"><div class="val" style="color:#D97706">${incReponer.length}</div><div class="lbl">🔄 Para reponer</div></div>
-</div>
-${totalDescuentosMes > 0 ? `<div class="total"><span>💰 Total descuentos este mes</span><span>${formatBs(totalDescuentosMes)}</span></div>` : ''}
-${detalleDesc.length > 0 ? `<h2>Descuentos este mes (${detalleDesc.reduce((s, d) => s + d.count, 0)} ítems)</h2>
-<table><tr><th>Herramienta</th><th>Cantidad</th><th>Monto</th></tr>
-${detalleDesc.map(d => `<tr><td>${d.nombre}</td><td>${d.count}</td><td>${formatBs(d.total)}</td></tr>`).join('')}
-</table>` : ''}
-${incPerdidas.length > 0 ? `<h2>Pérdidas activas (${incPerdidas.length})</h2>
-<table><tr><th>Herramienta</th><th>Fecha</th><th>Estado</th></tr>
-${incPerdidas.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFecha(a.fecha_reporte) : '—'}</td><td>Activa</td></tr>`).join('')}
-</table>` : ''}
-${incReponer.length > 0 ? `<h2>Para reponer (${incReponer.length})</h2>
-<table><tr><th>Herramienta</th><th>Fecha</th><th>Precio ref.</th></tr>
-${incReponer.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFecha(a.fecha_reporte) : '—'}</td><td>${formatBs(a.precio ?? 0)}</td></tr>`).join('')}
-</table>` : ''}
-<div class="pie">Generado el ${formatFecha(hoy)} · Sistema de Herramientas</div>
-</body></html>`)
-    win.document.close(); win.print()
-  }
-
-  // ── WhatsApp general ─────────────────────────────────────────────────────────
-  function compartirWhatsApp() {
-    const detalleDesc = agruparDescuentosMes(incDescuentos)
-    const lineas = [
-      `📊 *Reporte — ${persona.nombre}*`,
-      `Sector: ${areaNombre ?? '—'} | ${formatFecha(hoy)}`,
-      '',
-      `⚠️ Pérdidas activas: ${incPerdidas.length}`,
-      `💸 Descuentos: ${incDescuentos.length}${totalDescuentosMes > 0 ? ` · ${formatBs(totalDescuentosMes)} este mes` : ''}`,
-      ...detalleDesc.map(d => `  • ${d.count} ${d.nombre} — ${formatBs(d.total)}`),
-      `🔄 Para reponer: ${incReponer.length}`,
-    ]
-    window.open(`https://wa.me/?text=${encodeURIComponent(lineas.join('\n'))}`, '_blank')
-  }
-
   // ── PDF por categoría ────────────────────────────────────────────────────────
   function generarPDFCategoria(cat: Categoria) {
     const p = periodos[cat]
@@ -282,15 +213,15 @@ td{padding:0.5rem;border:1px solid #E5E7EB}
 .pie{margin-top:2rem;font-size:0.75rem;color:#9CA3AF;border-top:1px solid #E5E7EB;padding-top:1rem}
 </style></head><body>
 <h1>📊 ${CAT_LABELS[cat]} — ${PERIODO_LABELS[p]}</h1>
-<p style="color:#6B7280;margin-top:0">Colaborador: <strong>${persona.nombre}</strong> &nbsp;·&nbsp; Sector: <strong>${areaNombre ?? '—'}</strong> &nbsp;·&nbsp; Fecha: <strong>${formatFecha(hoy)}</strong></p>
+<p style="color:#6B7280;margin-top:0">Colaborador: <strong>${persona.nombre}</strong> &nbsp;·&nbsp; Sector: <strong>${areaNombre ?? '—'}</strong></p>
 <h2>${CAT_LABELS[cat]} · ${PERIODO_LABELS[p]} (${items.length})</h2>
 ${items.length === 0
   ? '<p style="color:#9CA3AF">Sin registros en este período.</p>'
   : cat === 'descuento'
     ? `<table><tr><th>Herramienta</th><th>Fecha</th><th>Monto</th></tr>
-${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFecha(a.fecha_reporte) : '—'}</td><td>${formatBs(a.monto_descuento)}</td></tr>`).join('')}</table>`
+${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCorta(a.fecha_reporte) : '—'}</td><td>${formatBs(a.monto_descuento)}</td></tr>`).join('')}</table>`
     : `<table><tr><th>Herramienta</th><th>Fecha</th><th>${cat === 'reponer' ? 'Precio ref.' : 'Estado'}</th></tr>
-${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFecha(a.fecha_reporte) : '—'}</td><td>${cat === 'reponer' ? formatBs(a.precio ?? 0) : 'Activa'}</td></tr>`).join('')}</table>`}
+${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCorta(a.fecha_reporte) : '—'}</td><td>${cat === 'reponer' ? formatBs(a.precio ?? 0) : 'Activa'}</td></tr>`).join('')}</table>`}
 <div class="pie">Generado el ${formatFecha(hoy)} · Sistema de Herramientas</div>
 </body></html>`)
     win.document.close(); win.print()
@@ -302,12 +233,12 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFecha(a.
     const items = listaFiltradaDe(cat)
     const lineas = [
       `📊 *${CAT_LABELS[cat]} — ${PERIODO_LABELS[p]}*`,
-      `${persona.nombre} | ${areaNombre ?? '—'} | ${formatFecha(hoy)}`,
+      `${persona.nombre} | ${areaNombre ?? '—'}`,
       '',
       items.length === 0
         ? 'Sin registros en este período.'
         : items.map(a =>
-            `• ${a.nombre} — ${a.fecha_reporte ? formatFecha(a.fecha_reporte) : 'Sin fecha'}` +
+            `• ${a.nombre} — ${a.fecha_reporte ? formatFechaCorta(a.fecha_reporte) : 'Sin fecha'}` +
             (cat === 'descuento' ? ` — ${formatBs(a.monto_descuento)}` : '') +
             (cat === 'reponer' && a.precio ? ` — ref. ${formatBs(a.precio)}` : '')
           ).join('\n'),
@@ -330,16 +261,6 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFecha(a.
               <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.8rem', marginTop: '0.2rem' }}>📍 {areaNombre ?? 'Sin sector'}</div>
             </div>
             <button onClick={onCerrar} style={sBtnX}>✕</button>
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button onClick={generarPDF} style={sBtnHdr}>🖨️ PDF general</button>
-            <button onClick={compartirWhatsApp} style={sBtnHdr}>📱 WhatsApp</button>
-            <button
-              onClick={() => setHistorialAbierto(h => !h)}
-              style={{ ...sBtnHdr, background: historialAbierto ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.15)', flex: '0 0 auto' }}
-            >
-              📋 Historial
-            </button>
           </div>
         </div>
 
@@ -520,8 +441,22 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFecha(a.
             <>
               {/* ── Estado actual: tarjetas clicables ── */}
               <div>
-                <div style={sTitSec}>Estado actual</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.5rem', marginTop: '0.625rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.625rem' }}>
+                  <div style={sTitSec}>Estado actual</div>
+                  <button
+                    onClick={() => setHistorialAbierto(h => !h)}
+                    style={{
+                      background: historialAbierto ? '#7C3AED' : 'white',
+                      border: `1.5px solid ${historialAbierto ? '#7C3AED' : '#DDD6FE'}`,
+                      color: historialAbierto ? 'white' : '#7C3AED',
+                      borderRadius: '8px', padding: '0.35rem 0.75rem',
+                      fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer',
+                    }}
+                  >
+                    📋 Historial
+                  </button>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.5rem' }}>
                   <StatCard
                     val={incPerdidas.length} label="⚠️ Pérdidas"
                     bg="#FEE2E2" border="#FECACA" color="#DC2626"
@@ -692,5 +627,5 @@ const sTitSec:     CSSProperties = { fontSize: '0.75rem', fontWeight: '700', col
 const sTitSec2:    CSSProperties = { fontSize: '0.72rem', fontWeight: '700', color: '#7C3AED', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }
 const sTitSec2Rojo: CSSProperties = { fontSize: '0.72rem', fontWeight: '700', color: '#DC2626', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }
 const sBtnX:       CSSProperties = { background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', color: 'white', borderRadius: '8px', padding: '0.375rem 0.5rem', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, flexShrink: 0 }
-const sBtnHdr:     CSSProperties = { flex: 1, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', borderRadius: '8px', padding: '0.45rem 0.75rem', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }
+
 const sBtnSec:     CSSProperties = { background: 'white', color: '#374151', border: '1.5px solid #E5E7EB', borderRadius: '8px', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer', width: '100%' }

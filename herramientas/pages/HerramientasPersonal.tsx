@@ -1116,9 +1116,6 @@ interface PanelProps {
 }
 
 function PanelRevisar({ colaborador: c, areaNombre, configRevision, herramientas, cargandoPanel, onEstadoChange, observaciones, setObservaciones, guardando, guardado, errGuardar, onGuardar, onCerrar }: PanelProps) {
-  const perdidas      = herramientas.filter(h => h.estado === 'perdida').length
-  const reponer       = herramientas.filter(h => h.estado === 'reponer').length
-  const descuento     = herramientas.filter(h => h.estado === 'descuento').length
   const revResult     = configRevision ? calcularProximaRevision(configRevision) : null
   const yaRevisadoHoy = revisadoHoy(c.ultimaRevision)
   const { diasRetraso, fechaEsperada } = configRevision && !yaRevisadoHoy
@@ -1170,27 +1167,10 @@ function PanelRevisar({ colaborador: c, areaNombre, configRevision, herramientas
             <button onClick={onCerrar} style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', color: 'white', borderRadius: '8px', padding: '0.375rem 0.5rem', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, flexShrink: 0 }}>✕</button>
           </div>
           {tieneRetraso && (
-            <div style={{ background: 'rgba(0,0,0,0.15)', borderRadius: '10px', padding: '0.5rem 0.875rem', marginBottom: '0.875rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)' }}>
+            <div style={{ background: 'rgba(0,0,0,0.15)', borderRadius: '10px', padding: '0.5rem 0.875rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)' }}>
               ℹ️ Al guardar esta revisión se registrarán <strong>{diasRetraso} día{diasRetraso > 1 ? 's' : ''} de retraso</strong> en el historial.
             </div>
           )}
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', background: 'rgba(255,255,255,0.12)', borderRadius: '10px', padding: '0.625rem 0.75rem' }}>
-            {[
-              { v: herramientas.length, l: 'Total' },
-              { v: perdidas,            l: 'Perdidas' },
-              { v: reponer,             l: 'Reponer' },
-              { v: descuento,           l: 'Descuento' },
-            ].map((x, i, arr) => (
-              <div key={x.l} style={{ display: 'flex', alignItems: 'stretch' }}>
-                <div style={{ textAlign: 'center', flex: 1 }}>
-                  <div style={{ color: 'white', fontWeight: '800', fontSize: '1.05rem' }}>{x.v}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.67rem' }}>{x.l}</div>
-                </div>
-                {i < arr.length - 1 && <div style={{ width: '1px', background: 'rgba(255,255,255,0.2)', marginLeft: '0.5rem' }} />}
-              </div>
-            ))}
-          </div>
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
