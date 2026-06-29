@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { supabase } from '../../src/lib/supabase'
 import { activarFaviconHerramientas } from './faviconHerramientas'
@@ -47,7 +47,6 @@ export default function LayoutHerramientas() {
 
   const navLinks = (
     <div style={{ flex: 1, paddingTop: '0.25rem', overflowY: 'auto' }}>
-
       {NAV_LINKS.map(({ to, label, icon, end }) => (
         <NavLink
           key={to}
@@ -59,15 +58,15 @@ export default function LayoutHerramientas() {
             alignItems: 'center',
             gap: '0.6rem',
             padding: '0.75rem 1.125rem',
-            color: isActive ? '#FFFFFF' : 'rgba(255,255,255,0.75)',
-            backgroundColor: isActive ? 'rgba(45,212,191,0.2)' : 'transparent',
+            color: isActive ? '#FFFFFF' : 'rgba(255,255,255,0.78)',
+            backgroundColor: isActive ? 'rgba(255,255,255,0.18)' : 'transparent',
             textDecoration: 'none',
             fontWeight: isActive ? '700' : '400',
-            borderLeft: isActive ? '3px solid #2DD4BF' : '3px solid transparent',
+            borderLeft: isActive ? '3px solid #F9A8D4' : '3px solid transparent',
             fontSize: '1rem',
             letterSpacing: '0.01em',
-            transition: 'background-color 0.15s, color 0.15s',
-            borderRadius: '0 8px 8px 0',
+            transition: 'background-color 0.18s, color 0.18s',
+            borderRadius: '0 10px 10px 0',
             marginRight: '0.5rem',
           })}
         >
@@ -85,9 +84,9 @@ export default function LayoutHerramientas() {
           backgroundColor: 'transparent', border: 'none',
           cursor: 'pointer', fontSize: '1rem',
           borderLeft: '3px solid transparent',
-          borderRadius: '0 8px 8px 0',
+          borderRadius: '0 10px 10px 0',
           marginRight: '0.5rem',
-          transition: 'background-color 0.15s, color 0.15s',
+          transition: 'background-color 0.18s, color 0.18s',
           textAlign: 'left',
         }}
         onMouseEnter={e => {
@@ -102,13 +101,12 @@ export default function LayoutHerramientas() {
         <span style={{ fontSize: '1.05rem', lineHeight: 1, flexShrink: 0 }}>↩</span>
         Cerrar sesión
       </button>
-
     </div>
   )
 
   const sidebarStyle = {
     width: '224px',
-    background: 'linear-gradient(180deg, #0D9488 0%, #0F766E 60%, #115E59 100%)',
+    background: 'linear-gradient(180deg, #8B5CF6 0%, #7C3AED 55%, #EC4899 100%)',
     display: 'flex',
     flexDirection: 'column' as const,
     flexShrink: 0,
@@ -118,8 +116,8 @@ export default function LayoutHerramientas() {
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
 
       <style>{`
-        .her-link:not(.her-link--active):hover {
-          background: rgba(255,255,255,0.1) !important;
+        .her-nav-link:not([aria-current="page"]):hover {
+          background: rgba(255,255,255,0.12) !important;
           color: #ffffff !important;
         }
         .her-main { box-sizing: border-box; }
@@ -131,7 +129,7 @@ export default function LayoutHerramientas() {
 
       {/* Barra superior */}
       <header style={{
-        background: 'linear-gradient(90deg, #0D9488 0%, #0F766E 100%)',
+        background: 'linear-gradient(90deg, #8B5CF6 0%, #EC4899 100%)',
         padding: '0 1rem',
         height: '56px',
         display: 'flex',
@@ -141,7 +139,7 @@ export default function LayoutHerramientas() {
         position: 'sticky',
         top: 0,
         zIndex: 1001,
-        boxShadow: '0 2px 12px rgba(13,148,136,0.35)',
+        boxShadow: '0 2px 16px rgba(139,92,246,0.35)',
       }}>
 
         {/* Botón hamburguesa */}
@@ -149,14 +147,14 @@ export default function LayoutHerramientas() {
           onClick={() => setMenuAbierto(v => !v)}
           aria-label={menuAbierto ? 'Cerrar menú' : 'Abrir menú'}
           style={{
-            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+            background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.22)',
             color: 'white', cursor: 'pointer', padding: '0.375rem 0.5rem',
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
             gap: '4px', flexShrink: 0, borderRadius: '8px',
             transition: 'background 0.15s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)' }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.22)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)' }}
         >
           <span style={{ display: 'block', width: '20px', height: '2px', backgroundColor: 'white', borderRadius: '2px' }} />
           <span style={{ display: 'block', width: '20px', height: '2px', backgroundColor: 'white', borderRadius: '2px' }} />
@@ -167,7 +165,7 @@ export default function LayoutHerramientas() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
           <div style={{
             width: '30px', height: '30px', borderRadius: '8px',
-            background: 'linear-gradient(135deg, #2DD4BF, #0D9488)',
+            background: 'linear-gradient(135deg, #F9A8D4, #8B5CF6)',
             border: '1px solid rgba(255,255,255,0.25)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '0.9rem', flexShrink: 0,
@@ -192,12 +190,12 @@ export default function LayoutHerramientas() {
           <nav style={sidebarStyle}>
             <div style={{
               padding: '1rem 1.125rem 0.75rem',
-              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              borderBottom: '1px solid rgba(255,255,255,0.1)',
               display: 'flex', alignItems: 'center', gap: '0.625rem',
             }}>
               <div style={{
                 width: '32px', height: '32px', borderRadius: '9px', flexShrink: 0,
-                background: 'linear-gradient(135deg, rgba(45,212,191,0.4), rgba(15,118,110,0.4))',
+                background: 'linear-gradient(135deg, rgba(249,168,212,0.4), rgba(139,92,246,0.4))',
                 border: '1px solid rgba(255,255,255,0.2)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '0.9rem',
@@ -242,7 +240,7 @@ export default function LayoutHerramientas() {
         )}
 
         {/* Contenido de la página activa */}
-        <main className="her-main" style={{ flex: 1, backgroundColor: '#F0FDFA', overflowX: 'hidden', overflowY: 'auto', minWidth: 0 }}>
+        <main className="her-main" style={{ flex: 1, backgroundColor: '#FFF9FC', overflowX: 'hidden', overflowY: 'auto', minWidth: 0 }}>
           <Outlet />
         </main>
 
