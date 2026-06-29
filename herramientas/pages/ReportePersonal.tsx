@@ -284,17 +284,23 @@ export default function ReportePersonal({ persona, areaNombre, onCerrar, onRefre
       return
     }
 
-    await supabase.from('herramientas_perdidas').delete().in('asignacion_id', ids)
+    // Borrar registros huérfanos de herramientas_perdidas para este personal
+    await supabase.from('herramientas_perdidas')
+      .delete()
+      .eq('personal_id', persona.id)
+      .eq('estado', 'buscando')
 
-    const { error: updErr } = await supabase
-      .from('herramientas_asignaciones')
-      .update({ estado: 'asignada' })
-      .in('id', ids)
+    if (ids.length > 0) {
+      const { error: updErr } = await supabase
+        .from('herramientas_asignaciones')
+        .update({ estado: 'asignada' })
+        .in('id', ids)
 
-    if (updErr) {
-      setErrLimpiar('Error al actualizar asignaciones: ' + updErr.message)
-      setLimpiando(false)
-      return
+      if (updErr) {
+        setErrLimpiar('Error al actualizar asignaciones: ' + updErr.message)
+        setLimpiando(false)
+        return
+      }
     }
 
     setConfirmLimpiar(false)

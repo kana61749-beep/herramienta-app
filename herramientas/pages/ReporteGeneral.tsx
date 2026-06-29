@@ -307,17 +307,23 @@ export default function ReporteGeneral({ area, personalIds, colaboradores, onCer
       return
     }
 
-    await supabase.from('herramientas_perdidas').delete().in('asignacion_id', ids)
+    // Borrar registros huérfanos de herramientas_perdidas para todos los personal del sector
+    await supabase.from('herramientas_perdidas')
+      .delete()
+      .in('personal_id', personalIds)
+      .eq('estado', 'buscando')
 
-    const { error: updErr } = await supabase
-      .from('herramientas_asignaciones')
-      .update({ estado: 'asignada' })
-      .in('id', ids)
+    if (ids.length > 0) {
+      const { error: updErr } = await supabase
+        .from('herramientas_asignaciones')
+        .update({ estado: 'asignada' })
+        .in('id', ids)
 
-    if (updErr) {
-      setErrLimpiar('Error al actualizar asignaciones: ' + updErr.message)
-      setLimpiando(false)
-      return
+      if (updErr) {
+        setErrLimpiar('Error al actualizar asignaciones: ' + updErr.message)
+        setLimpiando(false)
+        return
+      }
     }
 
     setConfirmLimpiar(false)
