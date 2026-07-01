@@ -61,6 +61,11 @@ export default function ItemsHerramientasDetalle() {
   const [guardandoItem,   setGuardandoItem]   = useState(false)
   const [errItem,         setErrItem]         = useState('')
 
+  // Eliminar herramienta
+  const [pendEliminar,    setPendEliminar]    = useState<ItemHerramienta | null>(null)
+  const [eliminando,      setEliminando]      = useState(false)
+  const [bloqueadoMsg,    setBloqueadoMsg]    = useState<string | null>(null)
+
   useEffect(() => {
     if (!areaId) return
     cargar()
@@ -117,6 +122,35 @@ export default function ItemsHerramientasDetalle() {
     cargarItems()
   }
 
+  async function eliminarItem() {
+    if (!pendEliminar) return
+    setEliminando(true)
+
+    const { count } = await supabase
+      .from('herramientas_asignaciones')
+      .select('*', { count: 'exact', head: true })
+      .eq('item_id', pendEliminar.id)
+
+    if ((count ?? 0) > 0) {
+      setEliminando(false)
+      setPendEliminar(null)
+      setBloqueadoMsg('Esta herramienta está asignada a personal. Primero debes devolverla o quitar la asignación.')
+      return
+    }
+
+    const { error } = await supabase.from('herramientas_items').delete().eq('id', pendEliminar.id)
+    setEliminando(false)
+
+    if (error) {
+      setPendEliminar(null)
+      setBloqueadoMsg('Error al eliminar: ' + error.message)
+      return
+    }
+
+    setPendEliminar(null)
+    cargarItems()
+  }
+
   const filtrados = items.filter(i =>
     busqueda === '' || i.nombre.toLowerCase().includes(busqueda.toLowerCase())
   )
@@ -137,6 +171,7 @@ export default function ItemsHerramientasDetalle() {
         .her-tab:hover   { opacity: 0.8; }
         .item-row        { transition: background 0.1s; }
         .item-row:hover  { background: #F0FDFA !important; }
+        .btn-eliminar:hover { background: #FEE2E2 !important; color: #DC2626 !important; }
         .modal-overlay   { animation: panelFade 0.15s ease; }
         .modal-box       { animation: scaleIn   0.18s ease; }
         @keyframes panelFade { from { opacity: 0 }                        to { opacity: 1 }              }
@@ -256,6 +291,14 @@ export default function ItemsHerramientasDetalle() {
                       <span style={{ padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: '700', background: est.bg, color: est.color }}>
                         {est.label}
                       </span>
+                      <button
+                        className="btn-eliminar"
+                        onClick={() => setPendEliminar(item)}
+                        title="Eliminar herramienta"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', padding: '0.3rem', borderRadius: '8px', lineHeight: 1, color: '#9CA3AF', flexShrink: 0, transition: 'all 0.15s' }}
+                      >
+                        🗑️
+                      </button>
                     </div>
                   </div>
                 )
@@ -343,6 +386,45 @@ export default function ItemsHerramientasDetalle() {
               <button className="her-btn her-btn--primary" onClick={guardarItem} disabled={guardandoItem} style={{ flex: 1 }}>
                 {guardandoItem ? 'Guardando...' : 'Guardar herramienta'}
               </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── Modal confirmar eliminación ── */}
+      {pendEliminar && (
+        <>
+          <div className="modal-overlay" onClick={() => !eliminando && setPendEliminar(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2100 }} />
+          <div className="modal-box" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'min(400px,calc(100vw - 2rem))', background: 'white', borderRadius: '22px', boxShadow: '0 20px 60px rgba(13,37,84,0.25)', zIndex: 2101, padding: '1.75rem' }}>
+            <h2 style={{ margin: '0 0 0.625rem', fontSize: '1rem', fontWeight: '700', color: '#111827' }}>Eliminar herramienta</h2>
+            <p style={{ margin: '0 0 0.375rem', fontSize: '0.875rem', color: '#374151', lineHeight: 1.55 }}>
+              ¿Seguro que deseas eliminar <strong>"{pendEliminar.nombre}"</strong>?
+            </p>
+            <p style={{ margin: '0 0 1.5rem', fontSize: '0.82rem', color: '#9CA3AF', lineHeight: 1.5 }}>
+              Esta acción no se puede deshacer.
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button className="her-btn her-btn--secondary her-btn--sm" onClick={() => setPendEliminar(null)} disabled={eliminando}>Cancelar</button>
+              <button className="her-btn her-btn--sm" onClick={eliminarItem} disabled={eliminando}
+                style={{ background: 'linear-gradient(135deg, #F87171, #DC2626)', color: 'white', boxShadow: '0 6px 16px rgba(220,38,38,0.28)' }}>
+                {eliminando ? 'Eliminando...' : 'Sí, eliminar'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── Modal informativo: no se puede eliminar ── */}
+      {bloqueadoMsg && (
+        <>
+          <div className="modal-overlay" onClick={() => setBloqueadoMsg(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2100 }} />
+          <div className="modal-box" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'min(400px,calc(100vw - 2rem))', background: 'white', borderRadius: '22px', boxShadow: '0 20px 60px rgba(13,37,84,0.25)', zIndex: 2101, padding: '1.75rem' }}>
+            <h2 style={{ margin: '0 0 0.625rem', fontSize: '1rem', fontWeight: '700', color: '#111827' }}>⚠️ No se puede eliminar</h2>
+            <p style={{ margin: '0 0 1.5rem', fontSize: '0.875rem', color: '#374151', lineHeight: 1.55 }}>
+              {bloqueadoMsg}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="her-btn her-btn--primary her-btn--sm" onClick={() => setBloqueadoMsg(null)}>Entendido</button>
             </div>
           </div>
         </>
