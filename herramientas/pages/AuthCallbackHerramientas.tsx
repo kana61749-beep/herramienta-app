@@ -55,7 +55,7 @@ export default function AuthCallbackHerramientas() {
   if (error) {
     return (
       <div style={{
-        minHeight: '100vh', backgroundColor: '#F0FDFA',
+        minHeight: '100vh', backgroundColor: '#F7F9FC',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         justifyContent: 'center', gap: '1rem', padding: '2rem', textAlign: 'center',
       }}>
@@ -65,11 +65,8 @@ export default function AuthCallbackHerramientas() {
         </p>
         <button
           onClick={() => navigate('/herramientas/login', { replace: true })}
-          style={{
-            marginTop: '0.5rem', padding: '0.65rem 1.5rem',
-            backgroundColor: '#0D9488', color: 'white', border: 'none',
-            borderRadius: '8px', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer',
-          }}
+          className="her-btn her-btn--primary her-btn--sm"
+          style={{ marginTop: '0.5rem' }}
         >
           Volver al login
         </button>
@@ -79,14 +76,14 @@ export default function AuthCallbackHerramientas() {
 
   return (
     <div style={{
-      minHeight: '100vh', backgroundColor: '#F0FDFA',
+      minHeight: '100vh', backgroundColor: '#F7F9FC',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       justifyContent: 'center', gap: '1rem',
     }}>
       <style>{`@keyframes giro { to { transform: rotate(360deg); } }`}</style>
       <div style={{
         width: '40px', height: '40px', borderRadius: '50%',
-        border: '4px solid #99F6E4', borderTopColor: '#0D9488',
+        border: '4px solid #BFDBFE', borderTopColor: '#2563EB',
         animation: 'giro 0.85s linear infinite',
       }} />
       <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: 0 }}>

@@ -8,3 +8,146 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: #f5f5f5;
 }
+
+/* ============================================================
+   Sistema de diseño — Herramientas (paleta azul profesional)
+   Tokens: #3BA9FF celeste · #2563EB azul · #123C7A azul oscuro
+           #0D2554 texto azul · #F7F9FC fondo · #E8EDF2 borde
+   ============================================================ */
+
+/* ---- Tarjeta base: relieve, sombra suave, hover/press ---- */
+.her-card {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FCFDFF 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(13, 37, 84, 0.05);
+  box-shadow: 0 2px 8px rgba(13, 37, 84, 0.05), 0 10px 24px rgba(13, 37, 84, 0.05);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .her-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 16px rgba(13, 37, 84, 0.08), 0 18px 32px rgba(13, 37, 84, 0.09);
+  }
+}
+.her-card:active { transform: translateY(-1px) scale(0.99); }
+
+/* ---- Tarjetas de estadística coloridas con degradado + curva decorativa ---- */
+.her-stat-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  padding: 1.15rem 1.15rem 1.4rem;
+  color: #FFFFFF;
+  box-shadow: 0 10px 22px var(--her-stat-shadow, rgba(37, 99, 235, 0.28));
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .her-stat-card:hover { transform: translateY(-5px) scale(1.015); }
+}
+.her-stat-card:active { transform: translateY(-1px) scale(0.98); }
+
+.her-stat-card::before,
+.her-stat-card::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.13);
+  pointer-events: none;
+}
+.her-stat-card::after  { bottom: -34px; right: -18px; width: 130px; height: 130px; }
+.her-stat-card::before { bottom: -58px; right: 40px;  width: 90px;  height: 90px; background: rgba(255, 255, 255, 0.09); }
+
+.her-stat-card--azul     { background: linear-gradient(135deg, #3BA9FF 0%, #2563EB 100%); --her-stat-shadow: rgba(37, 99, 235, 0.32); }
+.her-stat-card--verde    { background: linear-gradient(135deg, #34D399 0%, #059669 100%); --her-stat-shadow: rgba(5, 150, 105, 0.30); }
+.her-stat-card--amarillo { background: linear-gradient(135deg, #FBBF24 0%, #D97706 100%); --her-stat-shadow: rgba(217, 119, 6, 0.30); }
+.her-stat-card--rojo     { background: linear-gradient(135deg, #F87171 0%, #DC2626 100%); --her-stat-shadow: rgba(220, 38, 38, 0.30); }
+.her-stat-card--morado   { background: linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%); --her-stat-shadow: rgba(124, 58, 237, 0.30); }
+
+.her-stat-icon {
+  position: relative; z-index: 1;
+  width: 44px; height: 44px;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.22);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  margin-bottom: 0.7rem;
+}
+.her-stat-valor {
+  position: relative; z-index: 1;
+  font-size: 1.85rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.her-stat-label {
+  position: relative; z-index: 1;
+  font-size: 0.76rem;
+  font-weight: 600;
+  opacity: 0.92;
+  margin-top: 0.3rem;
+}
+
+/* ---- Botones: altos, redondeados, degradados, con relieve ---- */
+.her-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 50px;
+  padding: 0 1.5rem;
+  border-radius: 16px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .her-btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.05); }
+}
+.her-btn:active:not(:disabled) { transform: translateY(0) scale(0.96); }
+.her-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.her-btn--primary {
+  background: linear-gradient(135deg, #3BA9FF, #2563EB);
+  color: #FFFFFF;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.30);
+}
+.her-btn--secondary {
+  background: #FFFFFF;
+  color: #123C7A;
+  border: 1.5px solid #E8EDF2;
+  box-shadow: 0 2px 8px rgba(13, 37, 84, 0.05);
+}
+.her-btn--danger {
+  background: linear-gradient(135deg, #F87171, #DC2626);
+  color: #FFFFFF;
+  box-shadow: 0 6px 16px rgba(220, 38, 38, 0.28);
+}
+.her-btn--success {
+  background: linear-gradient(135deg, #34D399, #059669);
+  color: #FFFFFF;
+  box-shadow: 0 6px 16px rgba(5, 150, 105, 0.28);
+}
+.her-btn--sm { height: 40px; padding: 0 1.1rem; border-radius: 13px; font-size: 0.82rem; }
+
+/* ---- Módulos/secciones internas (listas, historial, tablas, etc.) ---- */
+.her-modulo {
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 1.25rem;
+  border: 1px solid rgba(13, 37, 84, 0.05);
+  box-shadow: 0 2px 8px rgba(13, 37, 84, 0.05), 0 8px 20px rgba(13, 37, 84, 0.04);
+}
+.her-modulo-titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #9CA3AF;
+  margin-bottom: 0.9rem;
+}

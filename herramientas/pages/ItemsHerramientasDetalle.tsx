@@ -149,7 +149,7 @@ export default function ItemsHerramientasDetalle() {
       </button>
 
       {/* ── Encabezado del área ── */}
-      <div style={{ background: 'linear-gradient(135deg,#2563EB 0%,#123C7A 100%)', borderRadius: '14px', padding: '1.25rem 1.5rem', marginBottom: '1rem', boxShadow: '0 2px 10px rgba(37,99,235,0.25)' }}>
+      <div style={{ background: 'linear-gradient(135deg,#3BA9FF 0%,#2563EB 60%,#123C7A 100%)', borderRadius: '20px', padding: '1.4rem 1.6rem', marginBottom: '1.25rem', boxShadow: '0 10px 26px rgba(37,99,235,0.28)' }}>
         <h1 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '800', color: 'white' }}>
           🗂️ {area.nombre}
         </h1>
@@ -171,15 +171,16 @@ export default function ItemsHerramientasDetalle() {
       </div>
 
       {/* ── Stats ── */}
-      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '0.9rem', marginBottom: '1.4rem', flexWrap: 'wrap' }}>
         {[
-          { label: 'Total',     valor: items.length,                                          color: '#2563EB' },
-          { label: 'Completas', valor: items.filter(i => i.estado === 'completa').length,     color: '#16A34A' },
-          { label: 'Faltantes', valor: items.filter(i => i.estado === 'faltante' || i.estado === 'perdida').length, color: '#DC2626' },
+          { label: 'Total',     icono: '📦', valor: items.length,                                          variante: 'azul'  },
+          { label: 'Completas', icono: '✅', valor: items.filter(i => i.estado === 'completa').length,     variante: 'verde' },
+          { label: 'Faltantes', icono: '⚠️', valor: items.filter(i => i.estado === 'faltante' || i.estado === 'perdida').length, variante: 'rojo' },
         ].map(s => (
-          <div key={s.label} style={{ background: 'white', border: '1px solid #E5E7EB', borderRadius: '10px', padding: '0.75rem 1rem', flex: '1', minWidth: '80px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-            <div style={{ fontSize: '1.5rem', fontWeight: '800', color: s.color, lineHeight: 1 }}>{s.valor}</div>
-            <div style={{ fontSize: '0.72rem', color: '#9CA3AF', fontWeight: '600', marginTop: '0.2rem' }}>{s.label}</div>
+          <div key={s.label} className={`her-stat-card her-stat-card--${s.variante}`} style={{ flex: '1 1 130px', minWidth: '130px', textAlign: 'center' }}>
+            <div className="her-stat-icon" style={{ margin: '0 auto 0.7rem' }}>{s.icono}</div>
+            <div className="her-stat-valor">{s.valor}</div>
+            <div className="her-stat-label">{s.label}</div>
           </div>
         ))}
       </div>
@@ -209,7 +210,7 @@ export default function ItemsHerramientasDetalle() {
               placeholder="Buscar herramienta..."
               style={{ ...sInput, flex: '1', minWidth: '180px' }}
             />
-            <button style={sBtnPrimario} onClick={() => { setModalItem(true); setErrItem(''); setFormNombre(''); setFormDesc(''); setFormCantidad('1'); setFormPrecio(''); setFormEstado('completa'); setFormFotoUrl('') }}>
+            <button className="her-btn her-btn--primary" onClick={() => { setModalItem(true); setErrItem(''); setFormNombre(''); setFormDesc(''); setFormCantidad('1'); setFormPrecio(''); setFormEstado('completa'); setFormFotoUrl('') }}>
               + Agregar herramienta
             </button>
           </div>
@@ -225,7 +226,7 @@ export default function ItemsHerramientasDetalle() {
           )}
 
           {!cargandoItems && filtrados.length > 0 && (
-            <div style={{ background: 'white', borderRadius: '14px', border: '1px solid #E5E7EB', overflow: 'hidden', boxShadow: '0 1px 6px rgba(0,0,0,0.07)' }}>
+            <div className="her-card" style={{ overflow: 'hidden' }}>
               {filtrados.map((item, i) => {
                 const est = ESTADO_ITEM[item.estado] ?? ESTADO_ITEM.completa
                 return (
@@ -271,7 +272,7 @@ export default function ItemsHerramientasDetalle() {
 
       {/* ── Tab: Información ── */}
       {tabActiva === 'informacion' && (
-        <div style={sCard}>
+        <div className="her-card" style={{ padding: '1.25rem' }}>
           <InfoFila label="Nombre"       valor={area.nombre} />
           <InfoFila label="Slug"         valor={<code style={sCode}>{area.slug}</code>} />
           <InfoFila label="Revisor"      valor={area.revisor_nombre ?? '—'} />
@@ -291,7 +292,7 @@ export default function ItemsHerramientasDetalle() {
       {modalItem && (
         <>
           <div className="modal-overlay" onClick={() => setModalItem(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, backdropFilter: 'blur(2px)' }} />
-          <div className="modal-box" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'min(460px,calc(100vw - 2rem))', background: 'white', borderRadius: '16px', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', zIndex: 2001, overflow: 'hidden' }}>
+          <div className="modal-box" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'min(460px,calc(100vw - 2rem))', background: 'white', borderRadius: '20px', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', zIndex: 2001, overflow: 'hidden' }}>
             <div style={{ background: 'linear-gradient(135deg,#2563EB,#123C7A)', padding: '1.125rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ color: 'white', fontWeight: '700', fontSize: '1rem' }}>🔧 Nueva herramienta — {area.nombre}</span>
               <button onClick={() => setModalItem(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', borderRadius: '8px', padding: '0.3rem 0.5rem', cursor: 'pointer', fontSize: '1rem', lineHeight: 1 }}>✕</button>
@@ -338,8 +339,8 @@ export default function ItemsHerramientasDetalle() {
             </div>
 
             <div style={{ padding: '0 1.5rem 1.25rem', display: 'flex', gap: '0.75rem' }}>
-              <button onClick={() => setModalItem(false)} style={{ ...sBtnSecundario, flexShrink: 0 }}>Cancelar</button>
-              <button onClick={guardarItem} disabled={guardandoItem} style={{ flex: 1, ...sBtnPrimario, opacity: guardandoItem ? 0.7 : 1, cursor: guardandoItem ? 'wait' : 'pointer' }}>
+              <button className="her-btn her-btn--secondary" onClick={() => setModalItem(false)} style={{ flexShrink: 0 }}>Cancelar</button>
+              <button className="her-btn her-btn--primary" onClick={guardarItem} disabled={guardandoItem} style={{ flex: 1 }}>
                 {guardandoItem ? 'Guardando...' : 'Guardar herramienta'}
               </button>
             </div>
@@ -370,12 +371,9 @@ function InfoFila({ label, valor }: { label: string; valor: ReactNode }) {
 }
 
 // ─── Estilos ──────────────────────────────────────────────────────────────────
-const sCard: CSSProperties        = { background: 'white', borderRadius: '14px', padding: '1.25rem', boxShadow: '0 1px 6px rgba(0,0,0,0.07)', border: '1px solid rgba(0,0,0,0.06)' }
 const sInput: CSSProperties       = { padding: '0.5rem 0.875rem', borderRadius: '8px', border: '1.5px solid #E5E7EB', fontSize: '0.875rem', color: '#111827', outline: 'none', boxSizing: 'border-box', background: 'white', width: '100%' }
 const sCode: CSSProperties        = { background: '#F1F5F9', padding: '0.1rem 0.35rem', borderRadius: '4px', fontSize: '0.8rem', fontFamily: 'monospace' }
 const sTxtGris: CSSProperties     = { color: '#9CA3AF', fontSize: '0.875rem', margin: 0 }
 const sInfoTxt: CSSProperties     = { fontSize: '0.82rem', color: 'rgba(255,255,255,0.85)' }
 const sLabel: CSSProperties       = { display: 'block', fontSize: '0.78rem', fontWeight: '600', color: '#374151', marginBottom: '0.375rem' }
 const sBtnVolver: CSSProperties   = { background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#2563EB', fontWeight: '600', padding: '0 0 1rem 0', display: 'block' }
-const sBtnPrimario: CSSProperties = { background: 'linear-gradient(135deg,#2563EB,#123C7A)', color: 'white', border: 'none', borderRadius: '8px', padding: '0.5rem 1.125rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.375rem', whiteSpace: 'nowrap' }
-const sBtnSecundario: CSSProperties = { background: 'white', color: '#374151', border: '1.5px solid #E5E7EB', borderRadius: '8px', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer' }

@@ -67,7 +67,7 @@ function estadoBadgeStyle(e: Categoria): CSSProperties {
 }
 function sBtnCat(cat: Categoria): CSSProperties {
   const c = CAT_COLORS[cat]
-  return { background: 'white', border: `1.5px solid ${c.border}`, color: c.color, borderRadius: '7px', padding: '0.35rem 0.625rem', fontSize: '0.72rem', fontWeight: '600', cursor: 'pointer' }
+  return { color: c.color, borderColor: c.border }
 }
 
 export default function ReportePersonal({ persona, areaNombre, onCerrar, onRefresh }: Props) {
@@ -401,7 +401,7 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
 
           {/* ── Historial de revisiones ── */}
           {historialAbierto && (
-            <div style={{ border: '1.5px solid #A78BFA', borderRadius: '12px', padding: '1rem', background: '#FAF5FF' }}>
+            <div className="her-card" style={{ border: '1.5px solid #A78BFA', padding: '1rem', background: '#FAF5FF' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                 <span style={{ fontWeight: '700', fontSize: '0.9rem', color: '#7C3AED' }}>📋 Historial de revisiones</span>
                 <button onClick={() => setHistorialAbierto(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', fontSize: '1rem', padding: '0.125rem 0.25rem', lineHeight: 1 }}>✕</button>
@@ -412,13 +412,12 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
                 {(['semana', 'mes', 'anio'] as Periodo[]).map(per => {
                   const activo = periodoHist === per
                   return (
-                    <button key={per} onClick={() => setPeriodoHist(per)} style={{
-                      flex: 1, padding: '0.375rem 0.25rem', borderRadius: '6px',
-                      border: `1px solid ${activo ? '#7C3AED' : '#E5E7EB'}`,
-                      background: activo ? '#7C3AED' : 'white',
-                      color: activo ? 'white' : '#6B7280',
-                      fontWeight: '600', fontSize: '0.75rem', cursor: 'pointer',
-                    }}>
+                    <button
+                      key={per}
+                      onClick={() => setPeriodoHist(per)}
+                      className={`her-btn her-btn--sm ${activo ? 'her-btn--primary' : 'her-btn--secondary'}`}
+                      style={{ flex: 1, ...(activo ? { background: 'linear-gradient(135deg,#A78BFA,#7C3AED)', boxShadow: '0 6px 16px rgba(124,58,237,0.28)' } : {}) }}
+                    >
                       {PERIODO_LABELS[per]}
                     </button>
                   )
@@ -428,7 +427,7 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
               {cargandoHist ? (
                 <p style={{ textAlign: 'center', color: '#9CA3AF', fontSize: '0.82rem', padding: '1rem 0', margin: 0 }}>Cargando historial...</p>
               ) : revisiones.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '1.25rem', background: 'white', borderRadius: '8px', border: '1px dashed #DDD6FE' }}>
+                <div className="her-card" style={{ textAlign: 'center', padding: '1.25rem', border: '1px dashed #DDD6FE' }}>
                   <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>📭</div>
                   <p style={{ color: '#9CA3AF', fontWeight: '600', margin: 0, fontSize: '0.82rem' }}>Sin revisiones en este período</p>
                 </div>
@@ -452,7 +451,7 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
                 return (
                   <>
                     {/* Resumen */}
-                    <div style={{ background: 'white', borderRadius: '10px', padding: '0.75rem', marginBottom: '0.75rem', border: '1px solid #DDD6FE' }}>
+                    <div className="her-card" style={{ padding: '0.75rem', marginBottom: '0.75rem', border: '1px solid #DDD6FE' }}>
                       <div style={sTitSec2}>Resumen — {PERIODO_LABELS[periodoHist]}</div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.375rem', marginTop: '0.5rem' }}>
                         <MiniStat label="Total revs." val={revisiones.length} color="#374151" />
@@ -471,7 +470,7 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
 
                     {/* Herramientas más perdidas */}
                     {rankPerds.length > 0 && (
-                      <div style={{ background: 'white', borderRadius: '10px', padding: '0.75rem', marginBottom: '0.75rem', border: '1px solid #FECACA' }}>
+                      <div className="her-card" style={{ padding: '0.75rem', marginBottom: '0.75rem', border: '1px solid #FECACA' }}>
                         <div style={sTitSec2Rojo}>🔧 Herramientas más perdidas</div>
                         {rankPerds.map(([nombre, count], i) => (
                           <div key={nombre} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.25rem 0', borderTop: i > 0 ? '1px solid #FEF2F2' : 'none', marginTop: i > 0 ? '0.25rem' : '0.375rem' }}>
@@ -492,7 +491,7 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
                         const descEnRev = rev.detalles.filter(d => d.resultado === 'descuento')
                         const repEnRev  = rev.detalles.filter(d => d.resultado === 'reponer')
                         return (
-                          <div key={rev.id} style={{ background: 'white', borderRadius: '10px', padding: '0.75rem', border: `1px solid ${puntual ? '#D1FAE5' : '#FECACA'}` }}>
+                          <div key={rev.id} className="her-card" style={{ padding: '0.75rem', border: `1px solid ${puntual ? '#D1FAE5' : '#FECACA'}` }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
                               <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#374151' }}>
                                 📅 {formatFecha(rev.fecha_revision)}
@@ -534,11 +533,12 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
                 </div>
                 <div style={{ display: 'flex', gap: '0.375rem' }}>
                   {(['semana', 'mes', 'anio'] as Periodo[]).map(per => (
-                    <button key={per} onClick={() => setConfirmElim(per)} style={{
-                      flex: 1, padding: '0.375rem 0.2rem', borderRadius: '6px',
-                      border: '1px solid #FECACA', background: 'white',
-                      color: '#DC2626', fontWeight: '600', fontSize: '0.7rem', cursor: 'pointer',
-                    }}>
+                    <button
+                      key={per}
+                      onClick={() => setConfirmElim(per)}
+                      className="her-btn her-btn--sm her-btn--secondary"
+                      style={{ flex: 1, color: '#DC2626', borderColor: '#FECACA' }}
+                    >
                       🗑️ {PERIODO_LABELS[per]}
                     </button>
                   ))}
@@ -547,7 +547,7 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
 
               {/* Modal confirmación eliminación */}
               {confirmElim !== null && (
-                <div style={{ marginTop: '0.75rem', background: '#FEF2F2', border: '1.5px solid #FECACA', borderRadius: '10px', padding: '0.875rem' }}>
+                <div className="her-card" style={{ marginTop: '0.75rem', background: '#FEF2F2', border: '1.5px solid #FECACA', padding: '0.875rem' }}>
                   <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#DC2626', marginBottom: '0.375rem' }}>
                     ¿Eliminar historial de esta {PERIODO_LABELS[confirmElim].toLowerCase()}?
                   </div>
@@ -560,10 +560,10 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
                     </div>
                   )}
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={() => { setConfirmElim(null); setErrElim('') }} disabled={eliminando} style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: '1px solid #E5E7EB', background: 'white', color: '#374151', fontWeight: '600', fontSize: '0.78rem', cursor: eliminando ? 'default' : 'pointer', opacity: eliminando ? 0.6 : 1 }}>
+                    <button onClick={() => { setConfirmElim(null); setErrElim('') }} disabled={eliminando} className="her-btn her-btn--sm her-btn--secondary" style={{ flex: 1 }}>
                       Cancelar
                     </button>
-                    <button onClick={() => { if (confirmElim) eliminarHistorial(confirmElim) }} disabled={eliminando} style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: 'none', background: '#DC2626', color: 'white', fontWeight: '700', fontSize: '0.78rem', cursor: eliminando ? 'wait' : 'pointer', opacity: eliminando ? 0.7 : 1 }}>
+                    <button onClick={() => { if (confirmElim) eliminarHistorial(confirmElim) }} disabled={eliminando} className="her-btn her-btn--sm her-btn--danger" style={{ flex: 1, cursor: eliminando ? 'wait' : 'pointer' }}>
                       {eliminando ? 'Eliminando...' : 'Sí, eliminar'}
                     </button>
                   </div>
@@ -582,39 +582,31 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
                   <div style={sTitSec}>Estado actual</div>
                   <button
                     onClick={() => setHistorialAbierto(h => !h)}
-                    style={{
-                      background: historialAbierto ? '#7C3AED' : 'white',
-                      border: `1.5px solid ${historialAbierto ? '#7C3AED' : '#DDD6FE'}`,
-                      color: historialAbierto ? 'white' : '#7C3AED',
-                      borderRadius: '8px', padding: '0.35rem 0.75rem',
-                      fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer',
-                    }}
+                    className={`her-btn her-btn--sm ${historialAbierto ? '' : 'her-btn--secondary'}`}
+                    style={historialAbierto ? { background: 'linear-gradient(135deg,#A78BFA,#7C3AED)', color: 'white', boxShadow: '0 6px 16px rgba(124,58,237,0.28)' } : { color: '#7C3AED', borderColor: '#DDD6FE' }}
                   >
                     📋 Historial
                   </button>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.5rem' }}>
                   <StatCard
-                    val={incPerdidas.length} label="⚠️ Pérdidas"
-                    bg="#FEE2E2" border="#FECACA" color="#DC2626"
+                    val={incPerdidas.length} icono="⚠️" label="Pérdidas" variante="rojo"
                     activo={categoriaActiva === 'perdida'}
                     onClick={() => toggleCategoria('perdida')}
                   />
                   <StatCard
-                    val={incDescuentos.length} label="💸 Descuentos"
-                    bg="#EDE9FE" border="#DDD6FE" color="#7C3AED"
+                    val={incDescuentos.length} icono="💸" label="Descuentos" variante="morado"
                     activo={categoriaActiva === 'descuento'}
                     onClick={() => toggleCategoria('descuento')}
                   />
                   <StatCard
-                    val={incReponer.length} label="🔄 Reponer"
-                    bg="#FEF3C7" border="#FDE68A" color="#D97706"
+                    val={incReponer.length} icono="🔄" label="Reponer" variante="amarillo"
                     activo={categoriaActiva === 'reponer'}
                     onClick={() => toggleCategoria('reponer')}
                   />
                 </div>
                 {totalDescuentosMes > 0 && (
-                  <div style={{ marginTop: '0.5rem', padding: '0.625rem 0.875rem', background: '#EDE9FE', border: '1px solid #DDD6FE', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div className="her-card" style={{ marginTop: '0.5rem', padding: '0.625rem 0.875rem', background: '#EDE9FE', border: '1px solid #DDD6FE', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '0.82rem', color: '#5B21B6', fontWeight: '600' }}>💰 Total descuentos este mes</span>
                     <span style={{ fontSize: '1rem', fontWeight: '800', color: '#7C3AED' }}>{formatBs(totalDescuentosMes)}</span>
                   </div>
@@ -622,13 +614,14 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
                 {asignaciones.length > 0 && !confirmLimpiar && (
                   <button
                     onClick={() => setConfirmLimpiar(true)}
-                    style={{ marginTop: '0.5rem', width: '100%', padding: '0.45rem 0.875rem', border: '1.5px solid #FCD34D', background: 'white', color: '#92400E', borderRadius: '8px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}
+                    className="her-btn her-btn--sm her-btn--secondary"
+                    style={{ marginTop: '0.5rem', width: '100%', color: '#92400E', borderColor: '#FCD34D' }}
                   >
                     🧹 Limpiar incidencias actuales
                   </button>
                 )}
                 {confirmLimpiar && (
-                  <div style={{ marginTop: '0.5rem', background: '#FFFBEB', border: '1.5px solid #FCD34D', borderRadius: '10px', padding: '0.875rem' }}>
+                  <div className="her-card" style={{ marginTop: '0.5rem', background: '#FFFBEB', border: '1.5px solid #FCD34D', padding: '0.875rem' }}>
                     <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#92400E', marginBottom: '0.375rem' }}>
                       ¿Limpiar todas las incidencias activas?
                     </div>
@@ -641,10 +634,10 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
                       </div>
                     )}
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button onClick={() => { setConfirmLimpiar(false); setErrLimpiar('') }} disabled={limpiando} style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: '1px solid #E5E7EB', background: 'white', color: '#374151', fontWeight: '600', fontSize: '0.78rem', cursor: limpiando ? 'default' : 'pointer', opacity: limpiando ? 0.6 : 1 }}>
+                      <button onClick={() => { setConfirmLimpiar(false); setErrLimpiar('') }} disabled={limpiando} className="her-btn her-btn--sm her-btn--secondary" style={{ flex: 1 }}>
                         Cancelar
                       </button>
-                      <button onClick={limpiarIncidencias} disabled={limpiando} style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: 'none', background: '#F59E0B', color: 'white', fontWeight: '700', fontSize: '0.78rem', cursor: limpiando ? 'wait' : 'pointer', opacity: limpiando ? 0.7 : 1 }}>
+                      <button onClick={limpiarIncidencias} disabled={limpiando} className="her-btn her-btn--sm" style={{ flex: 1, background: 'linear-gradient(135deg,#FBBF24,#F59E0B)', color: 'white', boxShadow: '0 6px 16px rgba(245,158,11,0.28)', cursor: limpiando ? 'wait' : 'pointer' }}>
                         {limpiando ? 'Limpiando...' : 'Sí, limpiar'}
                       </button>
                     </div>
@@ -658,12 +651,12 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
                 const lista = listaFiltradaDe(categoriaActiva)
                 const p = periodos[categoriaActiva]
                 return (
-                  <div style={{ border: `1.5px solid ${c.border}`, borderRadius: '12px', padding: '1rem', background: c.bg }}>
+                  <div className="her-card" style={{ border: `1.5px solid ${c.border}`, padding: '1rem', background: c.bg }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                       <span style={{ fontWeight: '700', fontSize: '0.85rem', color: c.color }}>{CAT_LABELS[categoriaActiva]}</span>
                       <div style={{ display: 'flex', gap: '0.375rem' }}>
-                        <button onClick={() => generarPDFCategoria(categoriaActiva)} style={sBtnCat(categoriaActiva)}>🖨️ PDF</button>
-                        <button onClick={() => compartirWhatsAppCategoria(categoriaActiva)} style={sBtnCat(categoriaActiva)}>📱 WhatsApp</button>
+                        <button onClick={() => generarPDFCategoria(categoriaActiva)} className="her-btn her-btn--sm her-btn--secondary" style={sBtnCat(categoriaActiva)}>🖨️ PDF</button>
+                        <button onClick={() => compartirWhatsAppCategoria(categoriaActiva)} className="her-btn her-btn--sm her-btn--secondary" style={sBtnCat(categoriaActiva)}>📱 WhatsApp</button>
                       </div>
                     </div>
 
@@ -671,13 +664,12 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
                       {(['semana', 'mes', 'anio'] as Periodo[]).map(per => {
                         const activo = p === per
                         return (
-                          <button key={per} onClick={() => cambiarPeriodo(categoriaActiva, per)} style={{
-                            flex: 1, padding: '0.375rem 0.25rem', borderRadius: '6px',
-                            border: `1px solid ${activo ? c.activeBg : '#E5E7EB'}`,
-                            background: activo ? c.activeBg : 'white',
-                            color: activo ? c.activeColor : '#6B7280',
-                            fontWeight: '600', fontSize: '0.75rem', cursor: 'pointer',
-                          }}>
+                          <button
+                            key={per}
+                            onClick={() => cambiarPeriodo(categoriaActiva, per)}
+                            className={`her-btn her-btn--sm ${activo ? '' : 'her-btn--secondary'}`}
+                            style={{ flex: 1, ...(activo ? { background: c.activeBg, color: c.activeColor, boxShadow: `0 6px 16px ${c.border}` } : {}) }}
+                          >
                             {PERIODO_LABELS[per]}
                           </button>
                         )
@@ -689,7 +681,7 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
                       <span style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>{lista.length} registro{lista.length !== 1 ? 's' : ''}</span>
                     </div>
                     {lista.length === 0 ? (
-                      <div style={{ textAlign: 'center', padding: '1.25rem', background: 'white', borderRadius: '8px', border: '1px dashed #E5E7EB' }}>
+                      <div className="her-card" style={{ textAlign: 'center', padding: '1.25rem', border: '1px dashed #E5E7EB' }}>
                         <div style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>📭</div>
                         <p style={{ color: '#6B7280', fontWeight: '600', margin: 0, fontSize: '0.82rem' }}>Sin registros en este período</p>
                       </div>
@@ -703,7 +695,7 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
               })()}
 
               {asignaciones.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '2.5rem 1rem', background: '#F9FAFB', borderRadius: '12px', border: '1.5px dashed #E5E7EB' }}>
+                <div className="her-card" style={{ textAlign: 'center', padding: '2.5rem 1rem', background: '#F9FAFB', border: '1.5px dashed #E5E7EB' }}>
                   <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✅</div>
                   <p style={{ color: '#374151', fontWeight: '600', margin: '0 0 0.25rem' }}>Sin incidencias registradas</p>
                   <p style={{ color: '#9CA3AF', fontSize: '0.82rem', margin: 0 }}>Este colaborador no tiene pérdidas, descuentos ni herramientas para reponer.</p>
@@ -715,7 +707,7 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
 
         {/* Footer */}
         <div style={{ padding: '0.875rem 1.5rem', borderTop: '1px solid #E5E7EB', background: 'white', flexShrink: 0 }}>
-          <button onClick={onCerrar} style={sBtnSec}>Cerrar</button>
+          <button onClick={onCerrar} className="her-btn her-btn--secondary" style={sBtnSec}>Cerrar</button>
         </div>
       </div>
     </>
@@ -725,7 +717,7 @@ ${items.map(a => `<tr><td>${a.nombre}</td><td>${a.fecha_reporte ? formatFechaCor
 // ── Sub-componentes ───────────────────────────────────────────────────────────
 function ItemCard({ item, subtitulo }: { item: AsigIncidencia; subtitulo?: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.625rem 0.875rem', border: '1px solid rgba(0,0,0,0.06)', borderRadius: '8px', background: 'white', gap: '0.5rem' }}>
+    <div className="her-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.625rem 0.875rem', gap: '0.5rem' }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: '600', fontSize: '0.85rem', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.nombre}</div>
         <div style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: '0.1rem' }}>
@@ -745,25 +737,26 @@ function ItemCard({ item, subtitulo }: { item: AsigIncidencia; subtitulo?: strin
   )
 }
 
-function StatCard({ val, label, bg, border, color, activo, onClick }: {
-  val: number; label: string; bg: string; border: string; color: string
+function StatCard({ val, icono, label, variante, activo, onClick }: {
+  val: number; icono: string; label: string; variante: 'rojo' | 'morado' | 'amarillo'
   activo?: boolean; onClick?: () => void
 }) {
   return (
     <div
       onClick={onClick}
+      className={`her-stat-card her-stat-card--${variante}`}
       style={{
-        background: activo ? color : bg,
-        border: `${activo ? '2px' : '1px'} solid ${activo ? color : border}`,
-        borderRadius: '10px', padding: '0.625rem', textAlign: 'center',
+        padding: '0.75rem 0.625rem', textAlign: 'center',
         cursor: onClick ? 'pointer' : 'default',
-        transition: 'all 0.15s',
         userSelect: 'none',
+        outline: activo ? '2.5px solid rgba(255,255,255,0.85)' : 'none',
+        outlineOffset: activo ? '-4px' : undefined,
       }}
     >
-      <div style={{ fontSize: '1.4rem', fontWeight: '800', color: activo ? 'white' : color }}>{val}</div>
-      <div style={{ fontSize: '0.68rem', color: activo ? 'rgba(255,255,255,0.85)' : color, opacity: activo ? 1 : 0.8, marginTop: '0.15rem' }}>{label}</div>
-      <div style={{ fontSize: '0.6rem', marginTop: '0.2rem', color: activo ? 'rgba(255,255,255,0.65)' : color, opacity: 0.6 }}>
+      <div className="her-stat-icon" style={{ margin: '0 auto 0.4rem' }}>{icono}</div>
+      <div className="her-stat-valor" style={{ fontSize: '1.4rem' }}>{val}</div>
+      <div className="her-stat-label">{label}</div>
+      <div style={{ position: 'relative', zIndex: 1, fontSize: '0.6rem', marginTop: '0.25rem', color: 'rgba(255,255,255,0.75)' }}>
         {activo ? '▲ cerrar' : '▼ ver'}
       </div>
     </div>
@@ -772,7 +765,7 @@ function StatCard({ val, label, bg, border, color, activo, onClick }: {
 
 function MiniStat({ label, val, color }: { label: string; val: number; color: string }) {
   return (
-    <div style={{ textAlign: 'center', padding: '0.375rem 0.25rem', background: '#FAFAFA', borderRadius: '6px' }}>
+    <div style={{ textAlign: 'center', padding: '0.375rem 0.25rem', background: '#FAFAFA', borderRadius: '12px', border: '1px solid rgba(13,37,84,0.04)' }}>
       <div style={{ fontSize: '1.1rem', fontWeight: '800', color }}>{val}</div>
       <div style={{ fontSize: '0.62rem', color: '#9CA3AF', marginTop: '0.1rem' }}>{label}</div>
     </div>
@@ -796,4 +789,4 @@ const sTitSec2:    CSSProperties = { fontSize: '0.72rem', fontWeight: '700', col
 const sTitSec2Rojo: CSSProperties = { fontSize: '0.72rem', fontWeight: '700', color: '#DC2626', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }
 const sBtnX:       CSSProperties = { background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', color: 'white', borderRadius: '8px', padding: '0.375rem 0.5rem', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, flexShrink: 0 }
 
-const sBtnSec:     CSSProperties = { background: 'white', color: '#374151', border: '1.5px solid #E5E7EB', borderRadius: '8px', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer', width: '100%' }
+const sBtnSec:     CSSProperties = { width: '100%' }

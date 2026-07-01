@@ -78,7 +78,7 @@ function estadoBadgeStyle(e: Categoria): CSSProperties {
 }
 function sBtnCat(cat: Categoria): CSSProperties {
   const c = CAT_COLORS[cat]
-  return { background: 'white', border: `1.5px solid ${c.border}`, color: c.color, borderRadius: '7px', padding: '0.35rem 0.625rem', fontSize: '0.72rem', fontWeight: '600', cursor: 'pointer' }
+  return { background: 'white', border: `1.5px solid ${c.border}`, color: c.color }
 }
 
 export default function ReporteGeneral({ area, personalIds, colaboradores, onCerrar }: Props) {
@@ -490,18 +490,21 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
         <style>{`@keyframes panelFade{from{opacity:0}to{opacity:1}} @keyframes panelSlide{from{transform:translateX(100%)}to{transform:translateX(0)}}`}</style>
 
         {/* Header */}
-        <div style={{ background: 'linear-gradient(135deg,#6D28D9,#5B21B6)', padding: '1.25rem 1.5rem', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.875rem' }}>
+        <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg,#8B5CF6,#6D28D9 55%,#5B21B6)', padding: '1.25rem 1.5rem', flexShrink: 0, boxShadow: '0 4px 20px rgba(91,33,182,0.25)' }}>
+          <div style={{ position: 'absolute', top: '-36px', right: '-30px', width: '160px', height: '160px', borderRadius: '50%', border: '1px solid rgba(255,255,255,0.08)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', bottom: '-50px', left: '20%', width: '140px', height: '140px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.875rem' }}>
             <div>
               <div style={{ color: 'white', fontWeight: '800', fontSize: '1rem' }}>📊 Reporte General</div>
               <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.8rem', marginTop: '0.2rem' }}>Sector: {area.nombre} · {colaboradores.length} colaboradores</div>
             </div>
-            <button onClick={onCerrar} style={sBtnX}>✕</button>
+            <button className="her-btn her-btn--sm" onClick={onCerrar} style={sBtnX}>✕</button>
           </div>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button onClick={generarPDF} style={sBtnHdr}>🖨️ PDF general</button>
-            <button onClick={compartirWhatsApp} style={sBtnHdr}>📱 WhatsApp</button>
+          <div style={{ position: 'relative', display: 'flex', gap: '0.5rem' }}>
+            <button className="her-btn her-btn--sm" onClick={generarPDF} style={sBtnHdr}>🖨️ PDF general</button>
+            <button className="her-btn her-btn--sm" onClick={compartirWhatsApp} style={sBtnHdr}>📱 WhatsApp</button>
             <button
+              className="her-btn her-btn--sm"
               onClick={() => setHistorialAbierto(h => !h)}
               style={{ ...sBtnHdr, background: historialAbierto ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.15)', flex: '0 0 auto' }}
             >
@@ -515,7 +518,7 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
 
           {/* ── Historial de revisiones ── */}
           {historialAbierto && (
-            <div style={{ border: '1.5px solid #A78BFA', borderRadius: '12px', padding: '1rem', background: '#FAF5FF' }}>
+            <div className="her-card" style={{ border: '1.5px solid #DDD6FE', padding: '1.1rem', background: 'linear-gradient(180deg, #FAF5FF 0%, #F5F3FF 100%)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                 <span style={{ fontWeight: '700', fontSize: '0.9rem', color: '#6D28D9' }}>📋 Historial del sector</span>
                 <button onClick={() => setHistorialAbierto(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', fontSize: '1rem', padding: '0.125rem 0.25rem', lineHeight: 1 }}>✕</button>
@@ -526,12 +529,11 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
                 {(['semana', 'mes', 'anio'] as Periodo[]).map(per => {
                   const activo = periodoHist === per
                   return (
-                    <button key={per} onClick={() => setPeriodoHist(per)} style={{
-                      flex: 1, padding: '0.375rem 0.25rem', borderRadius: '6px',
+                    <button key={per} className="her-btn her-btn--sm" onClick={() => setPeriodoHist(per)} style={{
+                      flex: 1, padding: '0.375rem 0.25rem',
                       border: `1px solid ${activo ? '#6D28D9' : '#E5E7EB'}`,
                       background: activo ? '#6D28D9' : 'white',
                       color: activo ? 'white' : '#6B7280',
-                      fontWeight: '600', fontSize: '0.75rem', cursor: 'pointer',
                     }}>
                       {PERIODO_LABELS[per]}
                     </button>
@@ -544,7 +546,7 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
               ) : cargandoHist ? (
                 <p style={{ textAlign: 'center', color: '#9CA3AF', fontSize: '0.82rem', padding: '1rem 0', margin: 0 }}>Cargando historial...</p>
               ) : revisiones.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '1.25rem', background: 'white', borderRadius: '8px', border: '1px dashed #DDD6FE' }}>
+                <div className="her-card" style={{ textAlign: 'center', padding: '1.25rem', background: 'white', border: '1px dashed #DDD6FE', boxShadow: 'none' }}>
                   <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>📭</div>
                   <p style={{ color: '#9CA3AF', fontWeight: '600', margin: 0, fontSize: '0.82rem' }}>Sin revisiones en este período</p>
                 </div>
@@ -568,7 +570,7 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
                 return (
                   <>
                     {/* Resumen */}
-                    <div style={{ background: 'white', borderRadius: '10px', padding: '0.75rem', marginBottom: '0.75rem', border: '1px solid #DDD6FE' }}>
+                    <div className="her-card" style={{ padding: '0.85rem', marginBottom: '0.75rem', border: '1px solid #DDD6FE' }}>
                       <div style={sTitSec2}>Resumen — {PERIODO_LABELS[periodoHist]}</div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.375rem', marginTop: '0.5rem' }}>
                         <MiniStat label="Total revs." val={revisiones.length} color="#374151" />
@@ -587,7 +589,7 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
 
                     {/* Herramientas más perdidas */}
                     {rankPerds.length > 0 && (
-                      <div style={{ background: 'white', borderRadius: '10px', padding: '0.75rem', marginBottom: '0.75rem', border: '1px solid #FECACA' }}>
+                      <div className="her-card" style={{ padding: '0.85rem', marginBottom: '0.75rem', border: '1px solid #FECACA' }}>
                         <div style={sTitSec2Rojo}>🔧 Herramientas más perdidas</div>
                         {rankPerds.map(([nombre, count], i) => (
                           <div key={nombre} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.25rem 0', borderTop: i > 0 ? '1px solid #FEF2F2' : 'none', marginTop: i > 0 ? '0.25rem' : '0.375rem' }}>
@@ -608,7 +610,7 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
                         const descEnRev = rev.detalles.filter(d => d.resultado === 'descuento')
                         const repEnRev  = rev.detalles.filter(d => d.resultado === 'reponer')
                         return (
-                          <div key={rev.id} style={{ background: 'white', borderRadius: '10px', padding: '0.75rem', border: `1px solid ${puntual ? '#D1FAE5' : '#FECACA'}` }}>
+                          <div key={rev.id} className="her-card" style={{ padding: '0.85rem', border: `1px solid ${puntual ? '#D1FAE5' : '#FECACA'}` }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
                               <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#374151' }}>
                                 📅 {formatFecha(rev.fecha_revision)}
@@ -651,10 +653,10 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
                 </div>
                 <div style={{ display: 'flex', gap: '0.375rem' }}>
                   {(['semana', 'mes', 'anio'] as Periodo[]).map(per => (
-                    <button key={per} onClick={() => setConfirmElim(per)} style={{
-                      flex: 1, padding: '0.375rem 0.2rem', borderRadius: '6px',
+                    <button key={per} className="her-btn her-btn--sm" onClick={() => setConfirmElim(per)} style={{
+                      flex: 1, padding: '0.375rem 0.2rem',
                       border: '1px solid #FECACA', background: 'white',
-                      color: '#DC2626', fontWeight: '600', fontSize: '0.7rem', cursor: 'pointer',
+                      color: '#DC2626', fontSize: '0.7rem',
                     }}>
                       🗑️ {PERIODO_LABELS[per]}
                     </button>
@@ -664,7 +666,7 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
 
               {/* Modal confirmación eliminación */}
               {confirmElim !== null && (
-                <div style={{ marginTop: '0.75rem', background: '#FEF2F2', border: '1.5px solid #FECACA', borderRadius: '10px', padding: '0.875rem' }}>
+                <div className="her-card" style={{ marginTop: '0.75rem', background: '#FEF2F2', border: '1.5px solid #FECACA', padding: '0.9rem' }}>
                   <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#DC2626', marginBottom: '0.375rem' }}>
                     ¿Eliminar historial del sector de esta {PERIODO_LABELS[confirmElim].toLowerCase()}?
                   </div>
@@ -677,10 +679,10 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
                     </div>
                   )}
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={() => { setConfirmElim(null); setErrElim('') }} disabled={eliminando} style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: '1px solid #E5E7EB', background: 'white', color: '#374151', fontWeight: '600', fontSize: '0.78rem', cursor: eliminando ? 'default' : 'pointer', opacity: eliminando ? 0.6 : 1 }}>
+                    <button className="her-btn her-btn--secondary her-btn--sm" onClick={() => { setConfirmElim(null); setErrElim('') }} disabled={eliminando} style={{ flex: 1, cursor: eliminando ? 'default' : 'pointer' }}>
                       Cancelar
                     </button>
-                    <button onClick={() => { if (confirmElim) eliminarHistorial(confirmElim) }} disabled={eliminando} style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: 'none', background: '#DC2626', color: 'white', fontWeight: '700', fontSize: '0.78rem', cursor: eliminando ? 'wait' : 'pointer', opacity: eliminando ? 0.7 : 1 }}>
+                    <button className="her-btn her-btn--danger her-btn--sm" onClick={() => { if (confirmElim) eliminarHistorial(confirmElim) }} disabled={eliminando} style={{ flex: 1, cursor: eliminando ? 'wait' : 'pointer' }}>
                       {eliminando ? 'Eliminando...' : 'Sí, eliminar'}
                     </button>
                   </div>
@@ -703,39 +705,40 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.5rem', marginTop: '0.625rem' }}>
                   <StatCard
                     val={incPerdidas.length} label="⚠️ Pérdidas"
-                    bg="#FEE2E2" border="#FECACA" color="#DC2626"
+                    variante="rojo"
                     activo={categoriaActiva === 'perdida'}
                     onClick={() => toggleCategoria('perdida')}
                   />
                   <StatCard
                     val={incDescuentos.length} label="💸 Descuentos"
-                    bg="#EDE9FE" border="#DDD6FE" color="#7C3AED"
+                    variante="morado"
                     activo={categoriaActiva === 'descuento'}
                     onClick={() => toggleCategoria('descuento')}
                   />
                   <StatCard
                     val={incReponer.length} label="🔄 Reponer"
-                    bg="#FEF3C7" border="#FDE68A" color="#D97706"
+                    variante="amarillo"
                     activo={categoriaActiva === 'reponer'}
                     onClick={() => toggleCategoria('reponer')}
                   />
                 </div>
                 {totalDescuentosMes > 0 && (
-                  <div style={{ marginTop: '0.5rem', padding: '0.625rem 0.875rem', background: '#EDE9FE', border: '1px solid #DDD6FE', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div className="her-card" style={{ marginTop: '0.75rem', padding: '0.75rem 0.9rem', background: 'linear-gradient(135deg, #F5F3FF, #EDE9FE)', border: '1px solid #DDD6FE', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '0.82rem', color: '#5B21B6', fontWeight: '600' }}>💰 Total descuentos del sector este mes</span>
                     <span style={{ fontSize: '1rem', fontWeight: '800', color: '#7C3AED' }}>{formatBs(totalDescuentosMes)}</span>
                   </div>
                 )}
                 {asignaciones.length > 0 && !confirmLimpiar && (
                   <button
+                    className="her-btn her-btn--secondary her-btn--sm"
                     onClick={() => setConfirmLimpiar(true)}
-                    style={{ marginTop: '0.5rem', width: '100%', padding: '0.45rem 0.875rem', border: '1.5px solid #FCD34D', background: 'white', color: '#92400E', borderRadius: '8px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}
+                    style={{ marginTop: '0.75rem', width: '100%', border: '1.5px solid #FCD34D', color: '#92400E' }}
                   >
                     🧹 Limpiar incidencias actuales
                   </button>
                 )}
                 {confirmLimpiar && (
-                  <div style={{ marginTop: '0.5rem', background: '#FFFBEB', border: '1.5px solid #FCD34D', borderRadius: '10px', padding: '0.875rem' }}>
+                  <div className="her-card" style={{ marginTop: '0.75rem', background: 'linear-gradient(135deg,#FFFBEB,#FEF3C7)', border: '1.5px solid #FCD34D', padding: '0.9rem' }}>
                     <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#92400E', marginBottom: '0.375rem' }}>
                       ¿Limpiar todas las incidencias activas del sector?
                     </div>
@@ -748,10 +751,10 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
                       </div>
                     )}
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button onClick={() => { setConfirmLimpiar(false); setErrLimpiar('') }} disabled={limpiando} style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: '1px solid #E5E7EB', background: 'white', color: '#374151', fontWeight: '600', fontSize: '0.78rem', cursor: limpiando ? 'default' : 'pointer', opacity: limpiando ? 0.6 : 1 }}>
+                      <button className="her-btn her-btn--secondary her-btn--sm" onClick={() => { setConfirmLimpiar(false); setErrLimpiar('') }} disabled={limpiando} style={{ flex: 1, cursor: limpiando ? 'default' : 'pointer' }}>
                         Cancelar
                       </button>
-                      <button onClick={limpiarIncidencias} disabled={limpiando} style={{ flex: 1, padding: '0.4rem', borderRadius: '6px', border: 'none', background: '#F59E0B', color: 'white', fontWeight: '700', fontSize: '0.78rem', cursor: limpiando ? 'wait' : 'pointer', opacity: limpiando ? 0.7 : 1 }}>
+                      <button className="her-btn her-btn--sm" onClick={limpiarIncidencias} disabled={limpiando} style={{ flex: 1, background: 'linear-gradient(135deg,#FBBF24,#F59E0B)', color: 'white', boxShadow: '0 6px 16px rgba(245,158,11,0.28)', cursor: limpiando ? 'wait' : 'pointer' }}>
                         {limpiando ? 'Limpiando...' : 'Sí, limpiar'}
                       </button>
                     </div>
@@ -765,12 +768,12 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
                 const lista = listaFiltradaDe(categoriaActiva)
                 const p = periodos[categoriaActiva]
                 return (
-                  <div style={{ border: `1.5px solid ${c.border}`, borderRadius: '12px', padding: '1rem', background: c.bg }}>
+                  <div className="her-card" style={{ border: `1.5px solid ${c.border}`, padding: '1.1rem', background: c.bg }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                       <span style={{ fontWeight: '700', fontSize: '0.85rem', color: c.color }}>{CAT_LABELS[categoriaActiva]}</span>
                       <div style={{ display: 'flex', gap: '0.375rem' }}>
-                        <button onClick={() => generarPDFCategoria(categoriaActiva)} style={sBtnCat(categoriaActiva)}>🖨️ PDF</button>
-                        <button onClick={() => compartirWhatsAppCategoria(categoriaActiva)} style={sBtnCat(categoriaActiva)}>📱 WhatsApp</button>
+                        <button className="her-btn her-btn--sm" onClick={() => generarPDFCategoria(categoriaActiva)} style={sBtnCat(categoriaActiva)}>🖨️ PDF</button>
+                        <button className="her-btn her-btn--sm" onClick={() => compartirWhatsAppCategoria(categoriaActiva)} style={sBtnCat(categoriaActiva)}>📱 WhatsApp</button>
                       </div>
                     </div>
 
@@ -778,12 +781,11 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
                       {(['semana', 'mes', 'anio'] as Periodo[]).map(per => {
                         const activo = p === per
                         return (
-                          <button key={per} onClick={() => cambiarPeriodo(categoriaActiva, per)} style={{
-                            flex: 1, padding: '0.375rem 0.25rem', borderRadius: '6px',
+                          <button key={per} className="her-btn her-btn--sm" onClick={() => cambiarPeriodo(categoriaActiva, per)} style={{
+                            flex: 1, padding: '0.375rem 0.25rem',
                             border: `1px solid ${activo ? c.activeBg : '#E5E7EB'}`,
                             background: activo ? c.activeBg : 'white',
                             color: activo ? c.activeColor : '#6B7280',
-                            fontWeight: '600', fontSize: '0.75rem', cursor: 'pointer',
                           }}>
                             {PERIODO_LABELS[per]}
                           </button>
@@ -796,7 +798,7 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
                       <span style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>{lista.length} registro{lista.length !== 1 ? 's' : ''}</span>
                     </div>
                     {lista.length === 0 ? (
-                      <div style={{ textAlign: 'center', padding: '1.25rem', background: 'white', borderRadius: '8px', border: '1px dashed #E5E7EB' }}>
+                      <div className="her-card" style={{ textAlign: 'center', padding: '1.25rem', background: 'white', border: '1px dashed #E5E7EB', boxShadow: 'none' }}>
                         <div style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>📭</div>
                         <p style={{ color: '#6B7280', fontWeight: '600', margin: 0, fontSize: '0.82rem' }}>Sin registros en este período</p>
                       </div>
@@ -815,7 +817,7 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
                   <div style={sTitSec}>Personal con más incidencias activas</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', marginTop: '0.625rem' }}>
                     {rankingPersonal.map((c, i) => (
-                      <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.875rem', border: '1px solid #E5E7EB', borderRadius: '8px', background: 'white' }}>
+                      <div key={c.id} className="her-card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.9rem' }}>
                         <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: i === 0 ? '#FEF3C7' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: '800', color: i === 0 ? '#D97706' : '#6B7280', flexShrink: 0 }}>
                           {i + 1}
                         </div>
@@ -830,7 +832,7 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
                   </div>
                 </div>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 0.875rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px' }}>
+                <div className="her-card" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.7rem 0.9rem', background: '#F9FAFB', boxShadow: 'none' }}>
                   <span>✅</span><span style={{ fontSize: '0.82rem', color: '#9CA3AF' }}>Sin incidencias activas en el sector</span>
                 </div>
               )}
@@ -841,7 +843,7 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
                   <div style={sTitSec}>Herramientas más perdidas</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', marginTop: '0.625rem' }}>
                     {rankingTools.map(([nombre, count], i) => (
-                      <div key={nombre} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.875rem', border: '1px solid #E5E7EB', borderRadius: '8px', background: 'white' }}>
+                      <div key={nombre} className="her-card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.9rem' }}>
                         <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: '800', color: '#DC2626', flexShrink: 0 }}>
                           {i + 1}
                         </div>
@@ -858,7 +860,7 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
 
         {/* Footer */}
         <div style={{ padding: '0.875rem 1.5rem', borderTop: '1px solid #E5E7EB', background: 'white', flexShrink: 0 }}>
-          <button onClick={onCerrar} style={sBtnSec}>Cerrar</button>
+          <button className="her-btn her-btn--secondary" onClick={onCerrar} style={sBtnSec}>Cerrar</button>
         </div>
       </div>
     </>
@@ -868,7 +870,7 @@ ${items.map(a => `<tr><td>${a.personal_nombre}</td><td>${a.nombre}</td><td>${a.f
 // ── Sub-componentes ───────────────────────────────────────────────────────────
 function ItemCard({ item, subtitulo }: { item: AsigIncidencia; subtitulo?: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.625rem 0.875rem', border: '1px solid rgba(0,0,0,0.06)', borderRadius: '8px', background: 'white', gap: '0.5rem' }}>
+    <div className="her-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.7rem 0.9rem', gap: '0.5rem' }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: '600', fontSize: '0.85rem', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.nombre}</div>
         <div style={{ fontSize: '0.72rem', color: '#9CA3AF', marginTop: '0.1rem' }}>
@@ -888,25 +890,24 @@ function ItemCard({ item, subtitulo }: { item: AsigIncidencia; subtitulo?: strin
   )
 }
 
-function StatCard({ val, label, bg, border, color, activo, onClick }: {
-  val: number; label: string; bg: string; border: string; color: string
+function StatCard({ val, label, variante, activo, onClick }: {
+  val: number; label: string; variante: 'rojo' | 'morado' | 'amarillo'
   activo?: boolean; onClick?: () => void
 }) {
   return (
     <div
       onClick={onClick}
+      className={`her-stat-card her-stat-card--${variante}`}
       style={{
-        background: activo ? color : bg,
-        border: `${activo ? '2px' : '1px'} solid ${activo ? color : border}`,
-        borderRadius: '10px', padding: '0.625rem', textAlign: 'center',
+        padding: '0.75rem 0.625rem', textAlign: 'center',
         cursor: onClick ? 'pointer' : 'default',
-        transition: 'all 0.15s',
+        border: activo ? '2px solid rgba(255,255,255,0.85)' : '2px solid transparent',
         userSelect: 'none',
       }}
     >
-      <div style={{ fontSize: '1.4rem', fontWeight: '800', color: activo ? 'white' : color }}>{val}</div>
-      <div style={{ fontSize: '0.68rem', color: activo ? 'rgba(255,255,255,0.85)' : color, opacity: activo ? 1 : 0.8, marginTop: '0.15rem' }}>{label}</div>
-      <div style={{ fontSize: '0.6rem', marginTop: '0.2rem', color: activo ? 'rgba(255,255,255,0.65)' : color, opacity: 0.6 }}>
+      <div className="her-stat-valor" style={{ fontSize: '1.4rem' }}>{val}</div>
+      <div className="her-stat-label">{label}</div>
+      <div style={{ position: 'relative', fontSize: '0.6rem', marginTop: '0.25rem', color: 'rgba(255,255,255,0.75)' }}>
         {activo ? '▲ cerrar' : '▼ ver'}
       </div>
     </div>
@@ -943,6 +944,6 @@ const PERIODO_LABELS: Record<Periodo, string> = { semana: 'Semana', mes: 'Mes', 
 const sTitSec:      CSSProperties = { fontSize: '0.75rem', fontWeight: '700', color: '#374151', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }
 const sTitSec2:     CSSProperties = { fontSize: '0.72rem', fontWeight: '700', color: '#6D28D9', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }
 const sTitSec2Rojo: CSSProperties = { fontSize: '0.72rem', fontWeight: '700', color: '#DC2626', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }
-const sBtnX:        CSSProperties = { background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', color: 'white', borderRadius: '8px', padding: '0.375rem 0.5rem', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, flexShrink: 0 }
-const sBtnHdr:      CSSProperties = { flex: 1, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', borderRadius: '8px', padding: '0.45rem 0.75rem', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }
-const sBtnSec:      CSSProperties = { background: 'white', color: '#374151', border: '1.5px solid #E5E7EB', borderRadius: '8px', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer', width: '100%' }
+const sBtnX:        CSSProperties = { background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.28)', color: 'white', borderRadius: '12px', padding: '0.375rem 0.5rem', height: 'auto', fontSize: '1rem', lineHeight: 1, flexShrink: 0 }
+const sBtnHdr:      CSSProperties = { flex: 1, background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', borderRadius: '13px', padding: '0.45rem 0.75rem', height: 'auto', fontSize: '0.8rem', fontWeight: '700' }
+const sBtnSec:      CSSProperties = { width: '100%' }

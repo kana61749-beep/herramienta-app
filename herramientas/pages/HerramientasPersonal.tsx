@@ -535,13 +535,32 @@ export default function HerramientasPersonal() {
     <div style={{ padding: '1.5rem' }}>
       <style>{`
         .her-input:focus { border-color: #3BA9FF !important; outline: none; box-shadow: 0 0 0 3px rgba(59,169,255,0.12); }
-        .area-card { transition: box-shadow 0.18s, transform 0.18s; }
-        .area-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.13) !important; transform: translateY(-2px); }
-        .col-card { transition: box-shadow 0.15s, transform 0.15s; }
-        .col-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important; transform: translateY(-1px); }
-        .action-btn { transition: opacity 0.15s, transform 0.15s; }
-        .action-btn:not(:disabled):hover { opacity: 0.82; transform: translateY(-1px); }
-        .rev-tog { transition: all 0.12s; border: 1.5px solid; border-radius: 8px; padding: 0.35rem 0.6rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; }
+        .area-card { transition: box-shadow 0.18s ease, transform 0.18s ease; }
+        @media (hover: hover) and (pointer: fine) {
+          .area-card:hover { box-shadow: 0 10px 28px rgba(13,37,84,0.13) !important; transform: translateY(-3px); }
+        }
+        .area-card:active { transform: translateY(-1px) scale(0.99); }
+        .turno-card { transition: box-shadow 0.15s ease, transform 0.15s ease; }
+        @media (hover: hover) and (pointer: fine) {
+          .turno-card:hover { transform: translateY(-2px); }
+        }
+        .col-card { transition: box-shadow 0.15s ease, transform 0.15s ease; }
+        @media (hover: hover) and (pointer: fine) {
+          .col-card:hover { box-shadow: 0 8px 22px rgba(13,37,84,0.11) !important; transform: translateY(-2px); }
+        }
+        .col-card:active { transform: scale(0.99); }
+        .action-btn { transition: opacity 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease; }
+        @media (hover: hover) and (pointer: fine) {
+          .action-btn:not(:disabled):hover { opacity: 0.85; transform: translateY(-2px); }
+        }
+        .action-btn:not(:disabled):active { transform: scale(0.95); }
+        .turno-btn, .her-btn-lift { transition: transform 0.12s ease, filter 0.12s ease; }
+        @media (hover: hover) and (pointer: fine) {
+          .turno-btn:hover, .her-btn-lift:not(:disabled):hover { transform: translateY(-2px); filter: brightness(1.05); }
+        }
+        .turno-btn:active, .her-btn-lift:not(:disabled):active { transform: scale(0.96); }
+        .rev-tog { transition: all 0.14s ease; border: 1.5px solid; border-radius: 10px; padding: 0.35rem 0.6rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; }
+        .rev-tog:active { transform: scale(0.95); }
         .panel-overlay { animation: panelFade  0.18s ease; }
         .panel-drawer  { animation: panelSlide 0.22s cubic-bezier(0.32,0.72,0,1); }
         .modal-overlay { animation: panelFade  0.15s ease; }
@@ -605,8 +624,8 @@ export default function HerramientasPersonal() {
               {errForm && <p style={sErrMsg}>⚠️ {errForm}</p>}
             </div>
             <div style={{ padding: '0 1.5rem 1.25rem', display: 'flex', gap: '0.75rem' }}>
-              <button onClick={() => setModalNuevo(false)} style={{ ...sBtnSec, flexShrink: 0 }}>Cancelar</button>
-              <button onClick={guardarNuevo} disabled={guardandoForm} style={{ flex: 1, ...sBtnPrim, opacity: guardandoForm ? 0.7 : 1 }}>
+              <button className="her-btn-lift" onClick={() => setModalNuevo(false)} style={{ ...sBtnSec, flexShrink: 0 }}>Cancelar</button>
+              <button className="her-btn-lift" onClick={guardarNuevo} disabled={guardandoForm} style={{ flex: 1, ...sBtnPrim, opacity: guardandoForm ? 0.7 : 1 }}>
                 {guardandoForm ? 'Guardando...' : 'Guardar'}
               </button>
             </div>
@@ -733,11 +752,8 @@ function SectorCompacto({ area, onEntrar }: { area: AreaConStats; onEntrar: (a: 
   } as const
 
   return (
-    <div style={{
-      background: 'white',
+    <div className="her-card area-card" style={{
       borderRadius: '22px',
-      boxShadow: '0 6px 28px rgba(0,0,0,0.09)',
-      border: '1px solid #EFEFEF',
       overflow: 'hidden',
     }}>
       {/* ── Cabecera del sector ── */}
@@ -772,12 +788,12 @@ function SectorCompacto({ area, onEntrar }: { area: AreaConStats; onEntrar: (a: 
           const st  = area.turnoStats[t]
           const cfg = TURNO_CFG[t]
           return (
-            <div key={t} style={{
+            <div key={t} className="turno-card" style={{
               background: cfg.cardBg,
-              borderRadius: '16px',
+              borderRadius: '18px',
               border: `1.5px solid ${cfg.cardBorder}`,
               overflow: 'hidden',
-              boxShadow: `0 3px 14px ${cfg.cardShadow}`,
+              boxShadow: `0 4px 16px ${cfg.cardShadow}`,
             }}>
               {/* Header del turno */}
               <div style={{
@@ -821,19 +837,20 @@ function SectorCompacto({ area, onEntrar }: { area: AreaConStats; onEntrar: (a: 
               {/* Botón Ingresar */}
               <div style={{ padding: '0 0.75rem 0.75rem' }}>
                 <button
+                  className="turno-btn"
                   onClick={() => onEntrar(area, t)}
                   style={{
                     width: '100%',
                     background: cfg.btnBg,
                     color: 'white',
                     border: 'none',
-                    borderRadius: '10px',
-                    padding: '0.575rem 0.5rem',
+                    borderRadius: '12px',
+                    padding: '0.625rem 0.5rem',
                     fontSize: '0.78rem',
                     fontWeight: '700',
                     cursor: 'pointer',
                     letterSpacing: '0.01em',
-                    boxShadow: `0 3px 10px ${cfg.btnShadow}`,
+                    boxShadow: `0 4px 14px ${cfg.btnShadow}`,
                   }}
                 >
                   Ingresar →
@@ -866,7 +883,7 @@ function PantallaPersonal({ area, turno, colaboradores, cargando, configRevision
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.375rem', flexWrap: 'wrap' }}>
-        <button onClick={onVolver} style={{ background: 'white', border: '1.5px solid #E5E7EB', color: '#374151', borderRadius: '8px', padding: '0.375rem 0.75rem', fontSize: '0.82rem', fontWeight: '600', cursor: 'pointer' }}>
+        <button className="her-btn-lift" onClick={onVolver} style={{ background: 'white', border: '1.5px solid #E8EDF2', color: '#123C7A', borderRadius: '12px', padding: '0.4rem 0.85rem', fontSize: '0.82rem', fontWeight: '700', cursor: 'pointer', boxShadow: '0 2px 8px rgba(13,37,84,0.05)' }}>
           ← Sectores
         </button>
         <h1 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '700', color: '#111827', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -889,8 +906,8 @@ function PantallaPersonal({ area, turno, colaboradores, cargando, configRevision
           )}
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button onClick={onReporteGeneral} style={{ ...sBtnSec, fontSize: '0.8rem', padding: '0.4rem 0.875rem' }}>📊 Reporte general</button>
-          <button onClick={onAbrirNuevo} style={sBtnPrim}>+ Añadir personal</button>
+          <button className="her-btn-lift" onClick={onReporteGeneral} style={{ ...sBtnSec, fontSize: '0.8rem', padding: '0.4rem 0.875rem' }}>📊 Reporte general</button>
+          <button className="her-btn-lift" onClick={onAbrirNuevo} style={sBtnPrim}>+ Añadir personal</button>
         </div>
       </div>
       {cargando ? (
@@ -925,7 +942,7 @@ function ColaboradorCard({ colaborador: c, configRevision, onRevisar, onHerramie
   const tieneRetraso = diasRetraso > 0
 
   return (
-    <div className="col-card" style={{ background: 'white', border: `1.5px solid ${tieneRetraso ? '#FECACA' : '#E5E7EB'}`, borderRadius: '14px', padding: '1rem 1.25rem', boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+    <div className="her-card col-card" style={{ border: `1.5px solid ${tieneRetraso ? '#FECACA' : 'rgba(13,37,84,0.05)'}`, borderRadius: '18px', padding: '1.1rem 1.25rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.875rem' }}>
         <div style={{ width: '46px', height: '46px', borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg,#2563EB,#123C7A)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '0.95rem', overflow: 'hidden' }}>
           {c.foto_url ? <img src={c.foto_url} alt={c.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : iniciales(c.nombre)}
@@ -963,7 +980,7 @@ function ColaboradorCard({ colaborador: c, configRevision, onRevisar, onHerramie
 function BtnAccion({ label, color, onClick, disabled }: { label: string; color: string; onClick?: () => void; disabled?: boolean }) {
   return (
     <button className="action-btn" onClick={disabled ? undefined : onClick} disabled={disabled}
-      style={{ background: disabled ? '#F3F4F6' : color + '12', border: `1.5px solid ${disabled ? '#E5E7EB' : color + '40'}`, color: disabled ? '#9CA3AF' : color, borderRadius: '8px', padding: '0.4rem 0.25rem', fontSize: '0.72rem', fontWeight: '700', cursor: disabled ? 'default' : 'pointer', textAlign: 'center', lineHeight: 1.3 }}>
+      style={{ background: disabled ? '#F3F4F6' : color + '12', border: `1.5px solid ${disabled ? '#E5E7EB' : color + '40'}`, color: disabled ? '#9CA3AF' : color, borderRadius: '12px', padding: '0.5rem 0.25rem', fontSize: '0.72rem', fontWeight: '700', cursor: disabled ? 'default' : 'pointer', textAlign: 'center', lineHeight: 1.3, boxShadow: disabled ? 'none' : `0 2px 8px ${color}22` }}>
       {label}
     </button>
   )
@@ -1125,11 +1142,11 @@ function ModalHerramientas({ persona, areaId, onCerrar, onRefresh }: {
                     {editandoId !== a.asignacion_id && (
                       <div style={{ display: 'flex', gap: '0.375rem', flexShrink: 0 }}>
                         <button onClick={() => { setEditandoId(a.asignacion_id); setEditCant(a.cantidad) }}
-                          style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1D4ED8', borderRadius: '6px', padding: '0.3rem 0.55rem', fontSize: '0.72rem', fontWeight: '600', cursor: 'pointer' }}>
+                          className="her-btn-lift" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1D4ED8', borderRadius: '10px', padding: '0.3rem 0.6rem', fontSize: '0.72rem', fontWeight: '700', cursor: 'pointer' }}>
                           Editar
                         </button>
-                        <button onClick={() => eliminarAsig(a.asignacion_id)}
-                          style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', borderRadius: '6px', padding: '0.3rem 0.55rem', fontSize: '0.72rem', fontWeight: '600', cursor: 'pointer' }}>
+                        <button className="her-btn-lift" onClick={() => eliminarAsig(a.asignacion_id)}
+                          style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', borderRadius: '10px', padding: '0.3rem 0.6rem', fontSize: '0.72rem', fontWeight: '700', cursor: 'pointer' }}>
                           Quitar
                         </button>
                       </div>
@@ -1148,10 +1165,10 @@ function ModalHerramientas({ persona, areaId, onCerrar, onRefresh }: {
                   {items.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '1rem', background: '#FFF7ED', borderRadius: '10px', border: '1.5px dashed #FED7AA' }}>
                       <p style={{ color: '#92400E', fontSize: '0.82rem', margin: '0 0 0.5rem' }}>No hay herramientas creadas en este sector.</p>
-                      <button onClick={() => setVerFormItem(true)} style={{ ...sBtnPrim, fontSize: '0.8rem', padding: '0.4rem 0.875rem' }}>+ Crear herramienta</button>
+                      <button className="her-btn-lift" onClick={() => setVerFormItem(true)} style={{ ...sBtnPrim, fontSize: '0.8rem', padding: '0.4rem 0.875rem' }}>+ Crear herramienta</button>
                     </div>
                   ) : (
-                    <button onClick={() => setVerFormItem(true)} style={{ ...sBtnSec, fontSize: '0.8rem', padding: '0.45rem 0.75rem', alignSelf: 'flex-start' }}>+ Nueva herramienta</button>
+                    <button className="her-btn-lift" onClick={() => setVerFormItem(true)} style={{ ...sBtnSec, fontSize: '0.8rem', padding: '0.45rem 0.75rem', alignSelf: 'flex-start' }}>+ Nueva herramienta</button>
                   )}
                 </>
               )}
@@ -1164,7 +1181,7 @@ function ModalHerramientas({ persona, areaId, onCerrar, onRefresh }: {
                       <label style={sLabel}>Foto</label>
                       <input ref={fotoInputRef} type="file" accept="image/*" onChange={handleFotoChange} style={{ display: 'none' }} />
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <button type="button" onClick={() => fotoInputRef.current?.click()}
+                        <button className="her-btn-lift" type="button" onClick={() => fotoInputRef.current?.click()}
                           style={{ ...sBtnSec, fontSize: '0.8rem', padding: '0.45rem 0.875rem', whiteSpace: 'nowrap' }}>
                           📷 {fFotoB64 ? 'Cambiar foto' : 'Seleccionar foto'}
                         </button>
@@ -1195,8 +1212,8 @@ function ModalHerramientas({ persona, areaId, onCerrar, onRefresh }: {
                     </div>
                     {errItem && <p style={sErrMsg}>⚠️ {errItem}</p>}
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button onClick={() => { setVerFormItem(false); resetFormItem() }} style={{ ...sBtnSec, flexShrink: 0 }}>Cancelar</button>
-                      <button onClick={crearItem} disabled={creandoItem} style={{ flex: 1, ...sBtnPrim, opacity: creandoItem ? 0.7 : 1 }}>
+                      <button className="her-btn-lift" onClick={() => { setVerFormItem(false); resetFormItem() }} style={{ ...sBtnSec, flexShrink: 0 }}>Cancelar</button>
+                      <button className="her-btn-lift" onClick={crearItem} disabled={creandoItem} style={{ flex: 1, ...sBtnPrim, opacity: creandoItem ? 0.7 : 1 }}>
                         {creandoItem ? 'Creando...' : 'Crear y seleccionar'}
                       </button>
                     </div>
@@ -1208,7 +1225,7 @@ function ModalHerramientas({ persona, areaId, onCerrar, onRefresh }: {
         </div>
 
         <div style={{ padding: '0.875rem 1.5rem', borderTop: '1px solid #E5E7EB', background: 'white', flexShrink: 0 }}>
-          <button onClick={onCerrar} style={{ ...sBtnSec, width: '100%' }}>Cerrar</button>
+          <button className="her-btn-lift" onClick={onCerrar} style={{ ...sBtnSec, width: '100%' }}>Cerrar</button>
         </div>
       </div>
     </>
@@ -1243,7 +1260,7 @@ function PanelRevisar({ colaborador: c, areaNombre, configRevision, herramientas
   return (
     <>
       <div className="panel-overlay" onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, backdropFilter: 'blur(2px)' }} />
-      <div className="panel-drawer" style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(500px,100vw)', background: 'white', zIndex: 2001, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 40px rgba(0,0,0,0.2)' }}>
+      <div className="panel-drawer" style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(500px,100vw)', background: 'white', zIndex: 2001, display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 40px rgba(13,37,84,0.22)', borderTopLeftRadius: '20px', borderBottomLeftRadius: '20px', overflow: 'hidden' }}>
 
         <div style={{ background: tieneRetraso ? 'linear-gradient(135deg,#DC2626,#B91C1C)' : 'linear-gradient(135deg,#2563EB,#123C7A)', padding: '1.25rem 1.5rem', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.875rem' }}>
@@ -1358,8 +1375,8 @@ function PanelRevisar({ colaborador: c, areaNombre, configRevision, herramientas
             <>
               {errGuardar && <p style={{ ...sErrMsg, marginBottom: '0.5rem' }}>⚠️ {errGuardar}</p>}
               <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <button onClick={onCerrar} style={{ ...sBtnSec, flexShrink: 0, padding: '0.625rem 1rem' }}>Cancelar</button>
-                <button onClick={onGuardar} disabled={guardando} style={{ flex: 1, ...sBtnPrim, opacity: guardando ? 0.7 : 1, cursor: guardando ? 'wait' : 'pointer', padding: '0.625rem 1rem' }}>
+                <button className="her-btn-lift" onClick={onCerrar} style={{ ...sBtnSec, flexShrink: 0, padding: '0.625rem 1rem' }}>Cancelar</button>
+                <button className="her-btn-lift" onClick={onGuardar} disabled={guardando} style={{ flex: 1, ...sBtnPrim, opacity: guardando ? 0.7 : 1, cursor: guardando ? 'wait' : 'pointer', padding: '0.625rem 1rem' }}>
                   {guardando ? 'Guardando...' : '💾 Guardar revisión'}
                 </button>
               </div>
@@ -1372,13 +1389,13 @@ function PanelRevisar({ colaborador: c, areaNombre, configRevision, herramientas
 }
 
 // ── Estilos compartidos ───────────────────────────────────────────────────────
-const sInput: CSSProperties    = { padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1.5px solid #E5E7EB', fontSize: '0.875rem', color: '#111827', outline: 'none', boxSizing: 'border-box', background: 'white', width: '100%' }
+const sInput: CSSProperties    = { padding: '0.55rem 0.8rem', borderRadius: '12px', border: '1.5px solid #E5E7EB', fontSize: '0.875rem', color: '#111827', outline: 'none', boxSizing: 'border-box', background: 'white', width: '100%', transition: 'box-shadow 0.15s ease, border-color 0.15s ease' }
 const sLabel: CSSProperties    = { display: 'block', fontSize: '0.78rem', fontWeight: '600', color: '#374151', marginBottom: '0.375rem' }
 const sTitSec: CSSProperties   = { fontSize: '0.75rem', fontWeight: '700', color: '#374151', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }
-const sBtnPrim: CSSProperties  = { background: 'linear-gradient(135deg,#2563EB,#123C7A)', color: 'white', border: 'none', borderRadius: '8px', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer' }
-const sBtnSec: CSSProperties   = { background: 'white', color: '#374151', border: '1.5px solid #E5E7EB', borderRadius: '8px', padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer' }
-const sBtnX: CSSProperties     = { background: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', borderRadius: '8px', padding: '0.3rem 0.5rem', cursor: 'pointer', fontSize: '1rem', lineHeight: 1 }
+const sBtnPrim: CSSProperties  = { background: 'linear-gradient(135deg,#3BA9FF,#2563EB)', color: 'white', border: 'none', borderRadius: '14px', padding: '0.6rem 1.1rem', fontSize: '0.875rem', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 14px rgba(37,99,235,0.30)', transition: 'transform 0.12s ease, filter 0.12s ease' }
+const sBtnSec: CSSProperties   = { background: 'white', color: '#123C7A', border: '1.5px solid #E8EDF2', borderRadius: '14px', padding: '0.6rem 1.1rem', fontSize: '0.875rem', fontWeight: '700', cursor: 'pointer', boxShadow: '0 2px 8px rgba(13,37,84,0.05)', transition: 'transform 0.12s ease, filter 0.12s ease' }
+const sBtnX: CSSProperties     = { background: 'rgba(255,255,255,0.15)', border: 'none', color: 'white', borderRadius: '10px', padding: '0.3rem 0.5rem', cursor: 'pointer', fontSize: '1rem', lineHeight: 1 }
 const sOverlay: CSSProperties  = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2000, backdropFilter: 'blur(2px)' }
-const sModalBox: CSSProperties = { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'min(440px,calc(100vw - 2rem))', background: 'white', borderRadius: '16px', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', zIndex: 2001, overflow: 'hidden' }
-const sModalHdr: CSSProperties = { background: 'linear-gradient(135deg,#2563EB,#123C7A)', padding: '1.125rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }
-const sErrMsg: CSSProperties   = { color: '#DC2626', fontSize: '0.82rem', margin: 0, background: '#FEE2E2', padding: '0.5rem 0.75rem', borderRadius: '8px' }
+const sModalBox: CSSProperties = { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'min(440px,calc(100vw - 2rem))', background: 'white', borderRadius: '20px', boxShadow: '0 24px 60px rgba(13,37,84,0.28)', zIndex: 2001, overflow: 'hidden' }
+const sModalHdr: CSSProperties = { background: 'linear-gradient(135deg,#3BA9FF,#2563EB)', padding: '1.125rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }
+const sErrMsg: CSSProperties   = { color: '#DC2626', fontSize: '0.82rem', margin: 0, background: '#FEE2E2', padding: '0.5rem 0.75rem', borderRadius: '10px' }

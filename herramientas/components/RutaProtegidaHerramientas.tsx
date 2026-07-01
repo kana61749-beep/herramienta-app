@@ -47,13 +47,13 @@ function AuthGuard() {
   if (estado === 'verificando') {
     return (
       <div style={{
-        minHeight: '100vh', backgroundColor: '#F0FDFA',
+        minHeight: '100vh', backgroundColor: '#F7F9FC',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         <style>{`@keyframes giro { to { transform: rotate(360deg); } }`}</style>
         <div style={{
           width: '40px', height: '40px', borderRadius: '50%',
-          border: '4px solid #99F6E4', borderTopColor: '#0D9488',
+          border: '4px solid #BFDBFE', borderTopColor: '#2563EB',
           animation: 'giro 0.85s linear infinite',
         }} />
       </div>

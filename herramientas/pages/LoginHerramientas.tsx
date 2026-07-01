@@ -34,28 +34,27 @@ export default function LoginHerramientas() {
 
   return (
     <div style={{
-      minHeight: '100vh', backgroundColor: '#F0FDFA',
+      minHeight: '100vh', backgroundColor: '#F7F9FC',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '1.5rem',
     }}>
       <style>{`@keyframes aparecer { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
-      <div style={{
-        backgroundColor: 'white', border: '1px solid #99F6E4', borderRadius: '20px',
+      <div className="her-card" style={{
         padding: '2.5rem 2rem', width: '100%', maxWidth: '360px',
-        boxShadow: '0 4px 24px rgba(13,148,136,0.1)', textAlign: 'center',
+        textAlign: 'center',
         animation: 'aparecer 0.3s ease',
       }}>
 
         <div style={{
-          width: '68px', height: '68px', backgroundColor: '#0D9488', borderRadius: '16px',
+          width: '68px', height: '68px', background: 'linear-gradient(135deg, #3BA9FF, #2563EB)', borderRadius: '16px',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          marginBottom: '1.25rem', boxShadow: '0 4px 16px rgba(13,148,136,0.3)',
+          marginBottom: '1.25rem', boxShadow: '0 4px 16px rgba(37,99,235,0.3)',
         }}>
           <span style={{ fontSize: '1.9rem', lineHeight: 1 }}>🔧</span>
         </div>
 
-        <h1 style={{ color: '#0D9488', fontSize: '1.4rem', fontWeight: '800', margin: '0 0 0.3rem' }}>
+        <h1 style={{ color: '#123C7A', fontSize: '1.4rem', fontWeight: '800', margin: '0 0 0.3rem' }}>
           Herramientas
         </h1>
         <p style={{ color: '#9ca3af', fontSize: '0.875rem', margin: '0 0 2rem', lineHeight: 1.5 }}>
@@ -65,25 +64,10 @@ export default function LoginHerramientas() {
         <button
           onClick={loginConGoogle}
           disabled={cargando}
+          className="her-btn her-btn--primary"
           style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
-            width: '100%', padding: '0.875rem 1rem',
-            backgroundColor: 'white', border: '1.5px solid #e5e7eb', borderRadius: '12px',
-            fontSize: '0.95rem', fontWeight: '600', color: '#374151',
+            width: '100%',
             cursor: cargando ? 'wait' : 'pointer',
-            boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
-            transition: 'box-shadow 0.15s, border-color 0.15s',
-            opacity: cargando ? 0.65 : 1,
-          }}
-          onMouseEnter={e => {
-            if (!cargando) {
-              e.currentTarget.style.borderColor = '#0D9488'
-              e.currentTarget.style.boxShadow = '0 2px 10px rgba(13,148,136,0.14)'
-            }
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.borderColor = '#e5e7eb'
-            e.currentTarget.style.boxShadow = '0 1px 6px rgba(0,0,0,0.07)'
           }}
         >
           <svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">

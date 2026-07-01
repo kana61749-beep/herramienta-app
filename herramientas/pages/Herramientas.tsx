@@ -74,12 +74,12 @@ export default function Herramientas() {
   }
 
   const CARDS = [
-    { icono: '📍', label: 'Áreas',        valor: contadores.areas,       color: '#3BA9FF', fondo: '#EFF6FF' },
-    { icono: '🔧', label: 'Herramientas', valor: contadores.items,       color: '#2563EB', fondo: '#EFF6FF' },
-    { icono: '👩‍💼', label: 'Personal',     valor: contadores.personal,    color: '#0369A1', fondo: '#BAE6FD' },
-    { icono: '⚠️', label: 'Pérdidas',     valor: contadores.perdidas,    color: '#DC2626', fondo: '#FEE2E2' },
-    { icono: '📋', label: 'Solicitudes',  valor: contadores.solicitudes, color: '#2563EB', fondo: '#EFF6FF' },
-  ]
+    { icono: '📍', label: 'Áreas',        valor: contadores.areas,       variante: 'azul'     },
+    { icono: '🔧', label: 'Herramientas', valor: contadores.items,       variante: 'morado'   },
+    { icono: '👩‍💼', label: 'Personal',     valor: contadores.personal,    variante: 'verde'    },
+    { icono: '⚠️', label: 'Pérdidas',     valor: contadores.perdidas,    variante: 'rojo'     },
+    { icono: '📋', label: 'Solicitudes',  valor: contadores.solicitudes, variante: 'amarillo' },
+  ] as const
 
   const proximaFecha = config ? calcularProxima(config.dia) : null
 
@@ -112,10 +112,10 @@ export default function Herramientas() {
 
         .hi-circ {
           display: grid;
-          grid-template-columns: repeat(5, 1fr);
-          gap: 0.5rem;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 0.75rem;
         }
-        @media (max-width: 480px) {
+        @media (min-width: 480px) and (max-width: 959px) {
           .hi-circ { grid-template-columns: repeat(3, 1fr); }
         }
       `}</style>
@@ -155,10 +155,10 @@ export default function Herramientas() {
       <div className="hi-body">
 
         {/* PRÓXIMA REVISIÓN */}
-        <div className="hi-revision" style={{
+        <div className="hi-revision her-card" style={{
           background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
-          borderRadius: '14px', padding: '1.125rem 1.25rem',
-          border: '1.5px solid #BFDBFE', boxShadow: '0 1px 6px rgba(59,169,255,0.08)',
+          padding: '1.125rem 1.25rem',
+          border: '1.5px solid #BFDBFE',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.625rem' }}>
             <span style={{ fontSize: '1rem' }}>📅</span>
@@ -200,33 +200,17 @@ export default function Herramientas() {
         </div>
 
         {/* RESUMEN GENERAL */}
-        <div className="hi-resumen" style={{
-          background: 'white', borderRadius: '14px', padding: '1.25rem',
-          boxShadow: '0 1px 6px rgba(0,0,0,0.07)', border: '1px solid rgba(0,0,0,0.06)',
-        }}>
-          <div style={{ fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#9CA3AF', marginBottom: '1rem' }}>
-            📊 Resumen general
-          </div>
+        <div className="hi-resumen her-modulo">
+          <div className="her-modulo-titulo">📊 Resumen general</div>
           {cargando ? (
             <p style={{ textAlign: 'center', color: '#9CA3AF', fontSize: '0.82rem', margin: '1rem 0' }}>Cargando...</p>
           ) : (
             <div className="hi-circ">
               {CARDS.map(c => (
-                <div key={c.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
-                  <div style={{
-                    width: '44px', height: '44px', borderRadius: '50%',
-                    background: c.fondo, border: `2.5px solid ${c.color}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '1.1rem', flexShrink: 0,
-                  }}>
-                    {c.icono}
-                  </div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: c.color, lineHeight: 1 }}>
-                    {c.valor}
-                  </div>
-                  <div style={{ fontSize: '0.62rem', color: '#9CA3AF', fontWeight: '500', textAlign: 'center', lineHeight: 1.2 }}>
-                    {c.label}
-                  </div>
+                <div key={c.label} className={`her-stat-card her-stat-card--${c.variante}`}>
+                  <div className="her-stat-icon">{c.icono}</div>
+                  <div className="her-stat-valor">{c.valor}</div>
+                  <div className="her-stat-label">{c.label}</div>
                 </div>
               ))}
             </div>
@@ -235,15 +219,9 @@ export default function Herramientas() {
 
         {/* ALERTAS */}
         <div className="hi-alertas">
-          <div style={{ fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#9CA3AF', marginBottom: '0.75rem' }}>
-            🚨 Alertas importantes
-          </div>
+          <div className="her-modulo-titulo" style={{ marginBottom: '0.75rem' }}>🚨 Alertas importantes</div>
 
-          <div style={{
-            background: 'white', borderRadius: '14px', border: '1px solid #E5E7EB',
-            padding: '2rem 1.5rem', textAlign: 'center',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-          }}>
+          <div className="her-card" style={{ padding: '2rem 1.5rem', textAlign: 'center' }}>
             <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✅</div>
             <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
               Sin alertas activas

@@ -90,7 +90,7 @@ export default function ConfiguracionHerramientas() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '640px' }}>
 
         {/* ── Sección: Revisión ── */}
-        <div style={sSeccion}>
+        <div className="her-modulo" style={sSeccion}>
           <div style={sTituloSeccion}>📅 Configuración de revisión</div>
 
           <div>
@@ -116,7 +116,7 @@ export default function ConfiguracionHerramientas() {
         </div>
 
         {/* ── Sección: Pérdidas ── */}
-        <div style={sSeccion}>
+        <div className="her-modulo" style={sSeccion}>
           <div style={sTituloSeccion}>⚠️ Control de pérdidas</div>
 
           <div style={sGrilla}>
@@ -135,7 +135,7 @@ export default function ConfiguracionHerramientas() {
 
         {/* ── Error ── */}
         {error && (
-          <div style={{ background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: '10px', padding: '0.75rem 1rem', fontSize: '0.82rem', color: '#DC2626' }}>
+          <div style={{ background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: '14px', padding: '0.75rem 1rem', fontSize: '0.82rem', color: '#DC2626' }}>
             ❌ {error}
           </div>
         )}
@@ -145,9 +145,10 @@ export default function ConfiguracionHerramientas() {
           <button
             onClick={guardar}
             disabled={guardando}
-            style={{ ...sBtnPrimario, opacity: guardando ? 0.7 : 1, cursor: guardando ? 'wait' : 'pointer' }}
+            className="her-btn her-btn--primary"
+            style={{ cursor: guardando ? 'wait' : 'pointer' }}
           >
-            {guardando ? 'Guardando...' : 'Guardar configuración'}
+            {guardando ? 'Guardando...' : '💾 Guardar configuración'}
           </button>
           {guardado && (
             <span style={{ fontSize: '0.85rem', color: '#16A34A', fontWeight: '600' }}>
@@ -160,10 +161,9 @@ export default function ConfiguracionHerramientas() {
   )
 }
 
-const sSeccion: CSSProperties       = { background: 'white', borderRadius: '14px', padding: '1.25rem', boxShadow: '0 1px 6px rgba(0,0,0,0.07)', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: '1rem' }
+const sSeccion: CSSProperties       = { display: 'flex', flexDirection: 'column', gap: '1rem' }
 const sTituloSeccion: CSSProperties = { fontSize: '0.78rem', fontWeight: '700', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.06em', paddingBottom: '0.75rem', borderBottom: '1px solid #F3F4F6' }
 const sGrilla: CSSProperties        = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }
 const sLabel: CSSProperties         = { display: 'block', fontSize: '0.78rem', fontWeight: '600', color: '#374151', marginBottom: '0.375rem' }
-const sInput: CSSProperties         = { width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1.5px solid #E5E7EB', fontSize: '0.875rem', color: '#111827', outline: 'none', boxSizing: 'border-box', background: 'white' }
+const sInput: CSSProperties         = { width: '100%', padding: '0.6rem 0.8rem', borderRadius: '12px', border: '1.5px solid #E8EDF2', fontSize: '0.875rem', color: '#111827', outline: 'none', boxSizing: 'border-box', background: 'white', transition: 'border-color 0.15s, box-shadow 0.15s' }
 const sHint: CSSProperties          = { margin: '0.3rem 0 0', fontSize: '0.72rem', color: '#9CA3AF' }
-const sBtnPrimario: CSSProperties   = { background: 'linear-gradient(135deg, #2563EB, #123C7A)', color: 'white', border: 'none', borderRadius: '8px', padding: '0.625rem 1.25rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer' }

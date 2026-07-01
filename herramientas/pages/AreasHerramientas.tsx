@@ -178,7 +178,7 @@ export default function AreasHerramientas() {
             Sectores que reciben y gestionan herramientas
           </p>
         </div>
-        <button onClick={abrirCrear} style={sBtnPrimario}>+ Nueva área</button>
+        <button onClick={abrirCrear} className="her-btn her-btn--primary">+ Nueva área</button>
       </div>
 
       {/* ── Buscador ── */}
@@ -246,7 +246,7 @@ export default function AreasHerramientas() {
         </div>
 
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
           {filtradas.map(a => (
             <AreaCard key={a.id} area={a}
               onVer={()          => navigate(`/herramientas/items/${a.id}`)}
@@ -324,11 +324,9 @@ function AreaCard({ area, onVer, onEditar, onToggleActivo, onArchivar, onRestaur
       ]
 
   return (
-    <div style={{
-      background: 'white', borderRadius: '12px',
-      border: `1px solid #E5E7EB`, borderLeft: `4px solid ${borde}`,
+    <div className="her-card" style={{
+      borderLeft: `4px solid ${borde}`,
       padding: '1rem 1rem 1rem 1.125rem',
-      boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
       display: 'flex', alignItems: 'center', gap: '0.875rem',
       opacity: area.archivado ? 0.8 : 1,
     }}>
@@ -466,9 +464,9 @@ function ModalArea({ area, guardando, error, onGuardar, onCerrar }: {
 
   return (
     <div onClick={onCerrar} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '1.5rem', overflowY: 'auto' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '520px', margin: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', overflow: 'hidden' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '22px', width: '100%', maxWidth: '520px', margin: 'auto', boxShadow: '0 20px 60px rgba(13,37,84,0.25)', overflow: 'hidden' }}>
 
-        <div style={{ background: 'linear-gradient(135deg, #2563EB, #123C7A)', padding: '1.125rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ background: 'linear-gradient(135deg, #3BA9FF, #2563EB 60%, #123C7A)', padding: '1.125rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: '700', color: 'white' }}>
             {area ? `Editar: ${area.nombre}` : '+ Nueva área'}
           </h2>
@@ -545,9 +543,8 @@ function ModalArea({ area, guardando, error, onGuardar, onCerrar }: {
           )}
 
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', paddingTop: '0.5rem', borderTop: '1px solid #F3F4F6' }}>
-            <button type="button" onClick={onCerrar} style={sBtnSecundario}>Cancelar</button>
-            <button type="submit" disabled={!valido || guardando}
-              style={{ ...sBtnPrimario, opacity: (!valido || guardando) ? 0.6 : 1, cursor: (!valido || guardando) ? 'not-allowed' : 'pointer' }}>
+            <button type="button" onClick={onCerrar} className="her-btn her-btn--secondary">Cancelar</button>
+            <button type="submit" disabled={!valido || guardando} className="her-btn her-btn--primary">
               {guardando ? 'Guardando...' : area ? 'Guardar cambios' : 'Crear área'}
             </button>
           </div>
@@ -565,13 +562,13 @@ function ModalConfirmar({ titulo, mensaje, etiquetaConfirmar, colorConfirmar, gu
 }) {
   return (
     <div onClick={onCancelar} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '400px', padding: '1.75rem', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '22px', width: '100%', maxWidth: '400px', padding: '1.75rem', boxShadow: '0 20px 60px rgba(13,37,84,0.25)' }}>
         <h2 style={{ margin: '0 0 0.625rem', fontSize: '1rem', fontWeight: '700', color: '#111827' }}>{titulo}</h2>
         <p style={{ margin: '0 0 1.5rem', fontSize: '0.875rem', color: '#6B7280', lineHeight: 1.55 }}>{mensaje}</p>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-          <button onClick={onCancelar} style={sBtnSecundario}>Cancelar</button>
-          <button onClick={onConfirmar} disabled={guardando}
-            style={{ background: colorConfirmar, color: 'white', border: 'none', borderRadius: '8px', padding: '0.5rem 1.125rem', fontSize: '0.875rem', fontWeight: '600', cursor: guardando ? 'not-allowed' : 'pointer', opacity: guardando ? 0.65 : 1 }}>
+          <button onClick={onCancelar} className="her-btn her-btn--secondary her-btn--sm">Cancelar</button>
+          <button onClick={onConfirmar} disabled={guardando} className="her-btn her-btn--sm"
+            style={{ background: `linear-gradient(135deg, ${colorConfirmar}, ${colorConfirmar})`, color: 'white', boxShadow: `0 6px 16px ${colorConfirmar}55` }}>
             {guardando ? 'Procesando...' : etiquetaConfirmar}
           </button>
         </div>
@@ -587,6 +584,4 @@ const sBadge: CSSProperties         = { padding: '0.18rem 0.6rem', borderRadius:
 const sInput: CSSProperties         = { width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1.5px solid #E5E7EB', fontSize: '0.875rem', color: '#111827', outline: 'none', boxSizing: 'border-box', background: 'white' }
 const sLabel: CSSProperties         = { display: 'block', fontSize: '0.78rem', fontWeight: '600', color: '#374151', marginBottom: '0.375rem' }
 const sTxtGris: CSSProperties       = { color: '#9CA3AF', fontSize: '0.875rem', margin: 0 }
-const sBtnPrimario: CSSProperties   = { background: 'linear-gradient(135deg, #2563EB, #123C7A)', color: 'white', border: 'none', borderRadius: '8px', padding: '0.5rem 1.125rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }
-const sBtnSecundario: CSSProperties = { background: 'white', color: '#374151', border: '1.5px solid #E5E7EB', borderRadius: '8px', padding: '0.5rem 1.125rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer' }
 const sBtnInline: CSSProperties     = { background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', padding: 0, color: '#3BA9FF', fontWeight: '600' }
