@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../src/lib/supabase'
+import { obtenerAlertas, type Alerta } from '../lib/alertas'
 
 const DIAS_LABEL = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 const MESES      = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
@@ -26,19 +27,20 @@ interface Config {
 }
 
 interface Contadores {
-  areas:      number
-  items:      number
-  personal:   number
-  perdidas:   number
-  solicitudes: number
+  areas:    number
+  items:    number
+  personal: number
+  perdidas: number
 }
 
 export default function Herramientas() {
-  const [contadores, setContadores] = useState<Contadores>({ areas: 0, items: 0, personal: 0, perdidas: 0, solicitudes: 0 })
+  const [contadores, setContadores] = useState<Contadores>({ areas: 0, items: 0, personal: 0, perdidas: 0 })
   const [config,     setConfig]     = useState<Config | null>(null)
   const [cargando,   setCargando]   = useState(true)
+  const [alertas,        setAlertas]        = useState<Alerta[]>([])
+  const [cargandoAlertas, setCargandoAlertas] = useState(true)
 
-  useEffect(() => { cargar() }, [])
+  useEffect(() => { cargar(); cargarAlertas() }, [])
 
   async function cargar() {
     const [
@@ -46,22 +48,19 @@ export default function Herramientas() {
       { count: items },
       { count: personal },
       { count: perdidas },
-      { count: solicitudes },
       { data: cfg },
     ] = await Promise.all([
       supabase.from('herramientas_areas').select('*', { count: 'exact', head: true }).eq('activo', true),
       supabase.from('herramientas_items').select('*', { count: 'exact', head: true }),
       supabase.from('herramientas_personal').select('*', { count: 'exact', head: true }).eq('activo', true),
       supabase.from('herramientas_perdidas').select('*', { count: 'exact', head: true }),
-      supabase.from('herramientas_solicitudes').select('*', { count: 'exact', head: true }),
       supabase.from('herramientas_config_revision').select('dia_revision_personal,hora_inicio_personal,hora_fin_personal').limit(1).maybeSingle(),
     ])
     setContadores({
-      areas:       areas       ?? 0,
-      items:       items       ?? 0,
-      personal:    personal    ?? 0,
-      perdidas:    perdidas    ?? 0,
-      solicitudes: solicitudes ?? 0,
+      areas:    areas    ?? 0,
+      items:    items    ?? 0,
+      personal: personal ?? 0,
+      perdidas: perdidas ?? 0,
     })
     if (cfg) {
       setConfig({
@@ -73,13 +72,19 @@ export default function Herramientas() {
     setCargando(false)
   }
 
+  async function cargarAlertas() {
+    setCargandoAlertas(true)
+    const lista = await obtenerAlertas()
+    setAlertas(lista)
+    setCargandoAlertas(false)
+  }
+
   const CARDS = [
-    { icono: '📍', label: 'Áreas',        valor: contadores.areas,       variante: 'azul'     },
-    { icono: '🔧', label: 'Herramientas', valor: contadores.items,       variante: 'morado'   },
-    { icono: '👩‍💼', label: 'Personal',     valor: contadores.personal,    variante: 'verde'    },
-    { icono: '⚠️', label: 'Pérdidas',     valor: contadores.perdidas,    variante: 'rojo'     },
-    { icono: '📋', label: 'Solicitudes',  valor: contadores.solicitudes, variante: 'amarillo' },
-  ] as const
+    { icono: '📍', label: 'Áreas',        valor: contadores.areas,    color: '#3BA9FF', fondo: '#EFF6FF' },
+    { icono: '🔧', label: 'Herramientas', valor: contadores.items,    color: '#2563EB', fondo: '#EFF6FF' },
+    { icono: '👩‍💼', label: 'Personal',     valor: contadores.personal, color: '#0369A1', fondo: '#BAE6FD' },
+    { icono: '⚠️', label: 'Pérdidas',     valor: contadores.perdidas, color: '#DC2626', fondo: '#FEE2E2' },
+  ]
 
   const proximaFecha = config ? calcularProxima(config.dia) : null
 
@@ -112,12 +117,18 @@ export default function Herramientas() {
 
         .hi-circ {
           display: grid;
-          grid-template-columns: repeat(2, 1fr);
+          grid-template-columns: repeat(4, 1fr);
           gap: 0.75rem;
         }
-        @media (min-width: 480px) and (max-width: 959px) {
-          .hi-circ { grid-template-columns: repeat(3, 1fr); }
+        @media (max-width: 380px) {
+          .hi-circ { grid-template-columns: repeat(2, 1fr); }
         }
+
+        .hi-alerta { transition: transform 0.18s ease, box-shadow 0.18s ease; }
+        @media (hover: hover) and (pointer: fine) {
+          .hi-alerta:hover { transform: translateY(-3px); }
+        }
+        .hi-alerta:active { transform: translateY(-1px) scale(0.99); }
       `}</style>
 
       {/* ── Banner ── */}
@@ -207,10 +218,21 @@ export default function Herramientas() {
           ) : (
             <div className="hi-circ">
               {CARDS.map(c => (
-                <div key={c.label} className={`her-stat-card her-stat-card--${c.variante}`}>
-                  <div className="her-stat-icon">{c.icono}</div>
-                  <div className="her-stat-valor">{c.valor}</div>
-                  <div className="her-stat-label">{c.label}</div>
+                <div key={c.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
+                  <div style={{
+                    width: '44px', height: '44px', borderRadius: '50%',
+                    background: c.fondo, border: `2.5px solid ${c.color}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '1.1rem', flexShrink: 0,
+                  }}>
+                    {c.icono}
+                  </div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: '800', color: c.color, lineHeight: 1 }}>
+                    {c.valor}
+                  </div>
+                  <div style={{ fontSize: '0.62rem', color: '#9CA3AF', fontWeight: '500', textAlign: 'center', lineHeight: 1.2 }}>
+                    {c.label}
+                  </div>
                 </div>
               ))}
             </div>
@@ -221,15 +243,37 @@ export default function Herramientas() {
         <div className="hi-alertas">
           <div className="her-modulo-titulo" style={{ marginBottom: '0.75rem' }}>🚨 Alertas importantes</div>
 
-          <div className="her-card" style={{ padding: '2rem 1.5rem', textAlign: 'center' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✅</div>
-            <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
-              Sin alertas activas
-            </p>
-            <p style={{ margin: '0.3rem 0 0', fontSize: '0.78rem', color: '#9CA3AF' }}>
-              Cuando haya herramientas perdidas, revisiones vencidas o solicitudes pendientes, aparecerán aquí.
-            </p>
-          </div>
+          {cargandoAlertas ? (
+            <div className="her-card" style={{ padding: '2rem 1.5rem', textAlign: 'center' }}>
+              <p style={{ margin: 0, fontSize: '0.82rem', color: '#9CA3AF' }}>Cargando...</p>
+            </div>
+          ) : alertas.length === 0 ? (
+            <div className="her-card" style={{ padding: '2rem 1.5rem', textAlign: 'center' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✅</div>
+              <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
+                Sin alertas activas
+              </p>
+              <p style={{ margin: '0.3rem 0 0', fontSize: '0.78rem', color: '#9CA3AF' }}>
+                Cuando haya herramientas perdidas, descuentos, reposiciones o revisiones vencidas, aparecerán aquí.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {alertas.map(a => (
+                <div key={a.id} className={`her-stat-card her-stat-card--${a.variante} hi-alerta`} style={{ padding: '1rem 1.15rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                    <div className="her-stat-icon" style={{ marginBottom: 0, flexShrink: 0 }}>{a.icono}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '0.9rem', fontWeight: '700', lineHeight: 1.3 }}>{a.titulo}</div>
+                      {a.detalle && (
+                        <div style={{ fontSize: '0.76rem', opacity: 0.9, marginTop: '0.2rem', lineHeight: 1.35 }}>{a.detalle}</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
       </div>
