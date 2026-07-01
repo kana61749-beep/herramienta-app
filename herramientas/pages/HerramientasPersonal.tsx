@@ -3,6 +3,7 @@ import { supabase } from '../../src/lib/supabase'
 import type { AreaHerramienta } from '../types'
 import ReportePersonal from './ReportePersonal'
 import ReporteGeneral from './ReporteGeneral'
+import HerramientasPersonalesArea from './HerramientasPersonalesArea'
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 type Turno = 'manana' | 'noche'
@@ -169,6 +170,7 @@ export default function HerramientasPersonal() {
   // Reportes
   const [reportePersona, setReportePersona] = useState<Colaborador | null>(null)
   const [verReporteGral, setVerReporteGral] = useState(false)
+  const [verPersonalesArea, setVerPersonalesArea] = useState(false)
 
   // Panel revisión
   const [revisar,       setRevisar]       = useState<Colaborador | null>(null)
@@ -584,6 +586,7 @@ export default function HerramientasPersonal() {
             onHerramientas={c => { setPersonaHer(c); setModalHer(true) }}
             onReporte={c => setReportePersona(c)}
             onReporteGeneral={() => setVerReporteGral(true)}
+            onVerPersonalesArea={() => setVerPersonalesArea(true)}
           />
       }
 
@@ -660,6 +663,15 @@ export default function HerramientasPersonal() {
           personalIds={colaboradores.map(c => c.id)}
           colaboradores={colaboradores.map(c => ({ id: c.id, nombre: c.nombre }))}
           onCerrar={() => setVerReporteGral(false)}
+        />
+      )}
+
+      {/* Herramientas personales del área (solo lectura) */}
+      {verPersonalesArea && areaActiva && (
+        <HerramientasPersonalesArea
+          areaId={areaActiva.id}
+          areaNombre={areaActiva.nombre}
+          onCerrar={() => setVerPersonalesArea(false)}
         />
       )}
 
@@ -865,12 +877,13 @@ function SectorCompacto({ area, onEntrar }: { area: AreaConStats; onEntrar: (a: 
 }
 
 // ── Pantalla 2: Personal del sector/turno ─────────────────────────────────────
-function PantallaPersonal({ area, turno, colaboradores, cargando, configRevision, onVolver, onAbrirNuevo, onRevisar, onHerramientas, onReporte, onReporteGeneral }: {
+function PantallaPersonal({ area, turno, colaboradores, cargando, configRevision, onVolver, onAbrirNuevo, onRevisar, onHerramientas, onReporte, onReporteGeneral, onVerPersonalesArea }: {
   area: AreaConStats; turno: Turno; colaboradores: Colaborador[]; cargando: boolean
   configRevision: ConfigRevision | null
   onVolver: () => void; onAbrirNuevo: () => void
   onRevisar: (c: Colaborador) => void; onHerramientas: (c: Colaborador) => void
   onReporte: (c: Colaborador) => void; onReporteGeneral: () => void
+  onVerPersonalesArea: () => void
 }) {
   const turnoColor = turno === 'manana' ? '#0284C7' : '#1E40AF'
   const turnoBg    = turno === 'manana' ? '#EFF6FF' : '#DBEAFE'
@@ -905,7 +918,8 @@ function PantallaPersonal({ area, turno, colaboradores, cargando, configRevision
             </span>
           )}
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button className="her-btn-lift" onClick={onVerPersonalesArea} style={{ ...sBtnSec, fontSize: '0.8rem', padding: '0.4rem 0.875rem' }}>🧰 Personales del área</button>
           <button className="her-btn-lift" onClick={onReporteGeneral} style={{ ...sBtnSec, fontSize: '0.8rem', padding: '0.4rem 0.875rem' }}>📊 Reporte general</button>
           <button className="her-btn-lift" onClick={onAbrirNuevo} style={sBtnPrim}>+ Añadir personal</button>
         </div>
@@ -1070,7 +1084,7 @@ function ModalHerramientas({ persona, areaId, onCerrar, onRefresh }: {
     if (fPrecio && (isNaN(precio!) || precio! < 0)) { setErrItem('Precio inválido.'); return }
     setCreandoItem(true); setErrItem('')
 
-    const payloadItem = { tipo: 'area', area_id: areaId, nombre: fNombre.trim(), descripcion: null, foto_url: fFotoB64 ?? null, cantidad_total: fCantidad, precio, moneda: 'BOB', estado: 'completa' }
+    const payloadItem = { tipo: 'personal', area_id: null, nombre: fNombre.trim(), descripcion: null, foto_url: fFotoB64 ?? null, cantidad_total: fCantidad, precio, moneda: 'BOB', estado: 'completa' }
     const { data: ni, error: errItem_ } = await supabase.from('herramientas_items')
       .insert(payloadItem)
       .select('id, nombre, precio, foto_url, cantidad_total').single()
