@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, type CSSProperties } from 'react'
+﻿import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { ReactNode } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../src/lib/supabase'
@@ -53,13 +53,12 @@ export default function ItemsHerramientasDetalle() {
   // Modal nueva herramienta
   const [modalItem,       setModalItem]       = useState(false)
   const [formNombre,      setFormNombre]      = useState('')
-  const [formDesc,        setFormDesc]        = useState('')
-  const [formCantidad,    setFormCantidad]    = useState('1')
+  const [formCantidad,    setFormCantidad]    = useState(1)
   const [formPrecio,      setFormPrecio]      = useState('')
-  const [formEstado,      setFormEstado]      = useState('completa')
-  const [formFotoUrl,     setFormFotoUrl]     = useState('')
+  const [formFotoB64,     setFormFotoB64]     = useState<string | null>(null)
   const [guardandoItem,   setGuardandoItem]   = useState(false)
   const [errItem,         setErrItem]         = useState('')
+  const fotoInputRef = useRef<HTMLInputElement>(null)
 
   // Eliminar herramienta
   const [pendEliminar,    setPendEliminar]    = useState<ItemHerramienta | null>(null)
@@ -97,18 +96,33 @@ export default function ItemsHerramientasDetalle() {
     setCargandoItems(false)
   }
 
+  function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => setFormFotoB64(ev.target?.result as string ?? null)
+    reader.readAsDataURL(file)
+  }
+
+  function resetFormItem() {
+    setFormNombre(''); setFormCantidad(1); setFormPrecio(''); setFormFotoB64(null); setErrItem('')
+    if (fotoInputRef.current) fotoInputRef.current.value = ''
+  }
+
   async function guardarItem() {
     if (!formNombre.trim()) { setErrItem('El nombre es requerido.'); return }
+    const precio = formPrecio ? parseFloat(formPrecio) : null
+    if (formPrecio && (isNaN(precio!) || precio! < 0)) { setErrItem('Precio inválido.'); return }
     setGuardandoItem(true); setErrItem('')
     const { error } = await supabase.from('herramientas_items').insert({
       tipo:           'area',
       area_id:        areaId,
       nombre:         formNombre.trim(),
-      descripcion:    formDesc.trim()    || null,
-      foto_url:       formFotoUrl.trim() || null,
-      estado:         formEstado,
-      cantidad_total: parseInt(formCantidad) > 0 ? parseInt(formCantidad) : 1,
-      precio:         formPrecio !== '' ? parseFloat(formPrecio) : null,
+      descripcion:    null,
+      foto_url:       formFotoB64,
+      estado:         'completa',
+      cantidad_total: formCantidad,
+      precio,
       moneda:         'BOB',
     })
     if (error) {
@@ -117,7 +131,7 @@ export default function ItemsHerramientasDetalle() {
       return
     }
     setModalItem(false)
-    setFormNombre(''); setFormDesc(''); setFormCantidad('1'); setFormPrecio(''); setFormEstado('completa'); setFormFotoUrl('')
+    resetFormItem()
     setGuardandoItem(false)
     cargarItems()
   }
@@ -245,7 +259,7 @@ export default function ItemsHerramientasDetalle() {
               placeholder="Buscar herramienta..."
               style={{ ...sInput, flex: '1', minWidth: '180px' }}
             />
-            <button className="her-btn her-btn--primary" onClick={() => { setModalItem(true); setErrItem(''); setFormNombre(''); setFormDesc(''); setFormCantidad('1'); setFormPrecio(''); setFormEstado('completa'); setFormFotoUrl('') }}>
+            <button className="her-btn her-btn--primary" onClick={() => { resetFormItem(); setModalItem(true) }}>
               + Agregar herramienta
             </button>
           </div>
@@ -343,36 +357,36 @@ export default function ItemsHerramientasDetalle() {
 
             <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
+                <label style={sLabel}>Foto</label>
+                <input ref={fotoInputRef} type="file" accept="image/*" onChange={handleFotoChange} style={{ display: 'none' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <button className="her-btn her-btn--secondary her-btn--sm" type="button" onClick={() => fotoInputRef.current?.click()}>
+                    📷 {formFotoB64 ? 'Cambiar foto' : 'Seleccionar foto'}
+                  </button>
+                  {formFotoB64 && (
+                    <>
+                      <img src={formFotoB64} alt="Preview" style={{ width: '44px', height: '44px', objectFit: 'cover', borderRadius: '8px', border: '1.5px solid #E5E7EB', flexShrink: 0 }} />
+                      <button type="button" onClick={() => { setFormFotoB64(null); if (fotoInputRef.current) fotoInputRef.current.value = '' }}
+                        style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', fontSize: '0.8rem', padding: '0.2rem' }}>
+                        ✕ Quitar
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div>
                 <label style={sLabel}>Nombre <span style={{ color: '#DC2626' }}>*</span></label>
                 <input className="her-input" value={formNombre} onChange={e => setFormNombre(e.target.value)} onKeyDown={e => e.key === 'Enter' && guardarItem()} placeholder="Ej: Tijeras, Regla, Sello..." style={sInput} autoFocus />
               </div>
-              <div>
-                <label style={sLabel}>Descripción</label>
-                <input className="her-input" value={formDesc} onChange={e => setFormDesc(e.target.value)} placeholder="Opcional" style={sInput} />
-              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
-                  <label style={sLabel}>Cantidad</label>
-                  <input className="her-input" type="number" min="1" value={formCantidad} onChange={e => setFormCantidad(e.target.value)} style={sInput} />
+                  <label style={sLabel}>Precio (Bs)</label>
+                  <input className="her-input" type="number" min={0} step="0.01" value={formPrecio} onChange={e => setFormPrecio(e.target.value)} placeholder="0.00" style={sInput} />
                 </div>
                 <div>
-                  <label style={sLabel}>Precio (Bs)</label>
-                  <input className="her-input" type="number" min="0" step="0.01" value={formPrecio} onChange={e => setFormPrecio(e.target.value)} placeholder="0.00" style={sInput} />
+                  <label style={sLabel}>Cantidad</label>
+                  <input className="her-input" type="number" min={1} value={formCantidad} onChange={e => setFormCantidad(Math.max(1, parseInt(e.target.value) || 1))} style={sInput} />
                 </div>
-              </div>
-              <div>
-                <label style={sLabel}>Estado</label>
-                <select className="her-input" value={formEstado} onChange={e => setFormEstado(e.target.value)} style={sInput}>
-                  <option value="completa">Completa</option>
-                  <option value="faltante">Faltante</option>
-                  <option value="perdida">Perdida</option>
-                  <option value="encontrada">Encontrada</option>
-                  <option value="repuesta">Repuesta</option>
-                </select>
-              </div>
-              <div>
-                <label style={sLabel}>Foto (URL opcional)</label>
-                <input className="her-input" value={formFotoUrl} onChange={e => setFormFotoUrl(e.target.value)} placeholder="https://..." style={sInput} />
               </div>
               {errItem && (
                 <p style={{ color: '#DC2626', fontSize: '0.82rem', margin: 0, background: '#FEE2E2', padding: '0.5rem 0.75rem', borderRadius: '8px' }}>
