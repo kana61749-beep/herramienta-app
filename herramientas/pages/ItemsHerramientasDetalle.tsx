@@ -6,12 +6,12 @@ import type { AreaHerramienta } from '../types'
 
 const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
-type Tab = 'herramientas' | 'revisiones' | 'solicitudes' | 'historial' | 'informacion'
+type Tab = 'herramientas' | 'revision' | 'reporte' | 'historial' | 'informacion'
 
 const TABS: { id: Tab; icono: string; label: string }[] = [
   { id: 'herramientas', icono: '🔧', label: 'Herramientas' },
-  { id: 'revisiones',   icono: '📋', label: 'Revisiones'   },
-  { id: 'solicitudes',  icono: '📨', label: 'Solicitudes'  },
+  { id: 'revision',     icono: '📋', label: 'Revisión'     },
+  { id: 'reporte',      icono: '📊', label: 'Reporte'      },
   { id: 'historial',    icono: '🕐', label: 'Historial'    },
   { id: 'informacion',  icono: 'ℹ️',  label: 'Información' },
 ]
@@ -24,6 +24,8 @@ const ESTADO_ITEM: Record<string, { label: string; color: string; bg: string }> 
   repuesta:   { label: 'Repuesta',   color: '#2563EB', bg: '#EFF6FF' },
 }
 
+const ESTADOS_REVISABLES = ['completa', 'faltante', 'perdida', 'encontrada', 'repuesta'] as const
+
 interface ItemHerramienta {
   id:             string
   nombre:         string
@@ -33,6 +35,56 @@ interface ItemHerramienta {
   moneda:         string
   estado:         string
   created_at:     string
+}
+
+type Periodo = 'semana' | 'mes' | 'anio'
+const PERIODO_LABELS: Record<Periodo, string> = { semana: 'Semana', mes: 'Mes', anio: 'Año' }
+
+interface RevisionHistArea {
+  id:             string
+  fecha_revision: string
+  fecha_esperada: string | null
+  dias_retraso:   number
+  detalles:       { nombre: string; resultado: string }[]
+}
+
+function semStr() {
+  const d = new Date()
+  const day = d.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  const mon = new Date(d)
+  mon.setDate(d.getDate() + diff)
+  return mon.toISOString().split('T')[0]
+}
+function mesStr() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
+}
+function anioStr() { return `${new Date().getFullYear()}-01-01` }
+function startOf(p: Periodo) {
+  if (p === 'semana') return semStr()
+  if (p === 'mes') return mesStr()
+  return anioStr()
+}
+function formatFecha(iso: string) {
+  return new Date(iso).toLocaleDateString('es-BO', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function calcularRetrasoArea(diaRevision: number, ultimaRevision: string | null): { diasRetraso: number; fechaEsperada: string } {
+  const hoy = new Date()
+  const hoyStr = hoy.toISOString().split('T')[0]
+  if (!diaRevision || diaRevision <= 0) return { diasRetraso: 0, fechaEsperada: hoyStr }
+  const diaJS = diaRevision === 7 ? 0 : diaRevision
+  let diasDesde = hoy.getDay() - diaJS
+  if (diasDesde < 0) diasDesde += 7
+  const esperada = new Date(hoy)
+  esperada.setDate(hoy.getDate() - diasDesde)
+  const fechaEsperada = esperada.toISOString().split('T')[0]
+  if (ultimaRevision) {
+    const ultima = new Date(ultimaRevision.split('T')[0])
+    if (ultima >= esperada) return { diasRetraso: 0, fechaEsperada }
+  }
+  return { diasRetraso: diasDesde, fechaEsperada }
 }
 
 // ─── Componente principal ─────────────────────────────────────────────────────
@@ -65,10 +117,26 @@ export default function ItemsHerramientasDetalle() {
   const [eliminando,      setEliminando]      = useState(false)
   const [bloqueadoMsg,    setBloqueadoMsg]    = useState<string | null>(null)
 
+  // Revisión del área
+  const [ultimaRevision,   setUltimaRevision]   = useState<string | null>(null)
+  const [marcados,         setMarcados]         = useState<Record<string, string>>({})
+  const [guardandoRev,     setGuardandoRev]     = useState(false)
+  const [guardadoRev,      setGuardadoRev]      = useState(false)
+  const [errRev,           setErrRev]           = useState('')
+
+  // Historial de revisiones del área
+  const [historial,       setHistorial]       = useState<RevisionHistArea[]>([])
+  const [cargandoHist,    setCargandoHist]    = useState(false)
+  const [periodoHist,     setPeriodoHist]     = useState<Periodo>('mes')
+
   useEffect(() => {
     if (!areaId) return
     cargar()
   }, [areaId])
+
+  useEffect(() => {
+    if (tabActiva === 'historial' && areaId) cargarHistorial()
+  }, [tabActiva, periodoHist, areaId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function cargar() {
     setCargando(true); setErrorCarga(false)
@@ -81,6 +149,20 @@ export default function ItemsHerramientasDetalle() {
     setArea(data as AreaHerramienta)
     setCargando(false)
     cargarItems()
+    cargarUltimaRevision()
+  }
+
+  async function cargarUltimaRevision() {
+    if (!areaId) return
+    const { data } = await supabase
+      .from('herramientas_revisiones')
+      .select('fecha_revision')
+      .eq('area_id', areaId)
+      .eq('tipo', 'sector')
+      .order('fecha_revision', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    setUltimaRevision((data as { fecha_revision: string } | null)?.fecha_revision ?? null)
   }
 
   async function cargarItems() {
@@ -165,6 +247,104 @@ export default function ItemsHerramientasDetalle() {
     cargarItems()
   }
 
+  function marcarEstado(itemId: string, estado: string) {
+    setMarcados(prev => {
+      const actual = prev[itemId]
+      const copia = { ...prev }
+      if (actual === estado) { delete copia[itemId] } else { copia[itemId] = estado }
+      return copia
+    })
+  }
+
+  async function guardarRevisionArea() {
+    if (!areaId || !area) return
+    setGuardandoRev(true); setErrRev('')
+
+    const hoy    = new Date().toISOString().split('T')[0]
+    const manana = new Date(Date.now() + 86400000).toISOString().split('T')[0]
+    const { diasRetraso, fechaEsperada } = calcularRetrasoArea(area.dia_revision, ultimaRevision)
+
+    const { data: existRevs } = await supabase
+      .from('herramientas_revisiones')
+      .select('id')
+      .eq('area_id', areaId)
+      .eq('tipo', 'sector')
+      .gte('fecha_revision', hoy)
+      .lt('fecha_revision', manana)
+      .limit(1)
+
+    let revisionId: string
+
+    if (existRevs && existRevs.length > 0) {
+      revisionId = (existRevs[0] as { id: string }).id
+      await Promise.all([
+        supabase.from('herramientas_revisiones').update({
+          dias_retraso: diasRetraso, fecha_esperada: fechaEsperada,
+        }).eq('id', revisionId),
+        supabase.from('herramientas_revision_detalle').delete().eq('revision_id', revisionId),
+      ])
+    } else {
+      const { data: revData, error: revErr } = await supabase
+        .from('herramientas_revisiones')
+        .insert({
+          tipo: 'sector', area_id: areaId, personal_id: null,
+          revisado_por: 'Admin', dias_retraso: diasRetraso, fecha_esperada: fechaEsperada,
+        })
+        .select('id')
+        .single()
+      if (revErr || !revData) {
+        setErrRev('Error al guardar: ' + (revErr?.message ?? 'sin respuesta'))
+        setGuardandoRev(false); return
+      }
+      revisionId = (revData as { id: string }).id
+    }
+
+    const marcadasEntries = Object.entries(marcados)
+    if (marcadasEntries.length > 0) {
+      await supabase.from('herramientas_revision_detalle').insert(
+        marcadasEntries.map(([itemId, estado]) => ({ revision_id: revisionId, item_id: itemId, resultado: estado }))
+      )
+      await Promise.all(
+        marcadasEntries.map(([itemId, estado]) =>
+          supabase.from('herramientas_items').update({ estado }).eq('id', itemId)
+        )
+      )
+    }
+
+    setGuardandoRev(false); setGuardadoRev(true)
+    setTimeout(() => {
+      setGuardadoRev(false); setMarcados({})
+      cargarItems(); cargarUltimaRevision()
+    }, 1400)
+  }
+
+  async function cargarHistorial() {
+    if (!areaId) return
+    setCargandoHist(true)
+    const { data } = await supabase
+      .from('herramientas_revisiones')
+      .select(`id, fecha_revision, dias_retraso, fecha_esperada,
+        herramientas_revision_detalle(resultado, herramientas_items(nombre))`)
+      .eq('area_id', areaId)
+      .eq('tipo', 'sector')
+      .gte('fecha_revision', startOf(periodoHist))
+      .order('fecha_revision', { ascending: false })
+
+    setHistorial(
+      ((data ?? []) as Record<string, unknown>[]).map(r => ({
+        id:             r.id as string,
+        fecha_revision: r.fecha_revision as string,
+        fecha_esperada: r.fecha_esperada as string | null,
+        dias_retraso:   (r.dias_retraso as number) ?? 0,
+        detalles: ((r.herramientas_revision_detalle as Record<string, unknown>[]) ?? []).map(d => {
+          const item = d.herramientas_items as { nombre: string } | null
+          return { nombre: item?.nombre ?? 'Herramienta', resultado: d.resultado as string }
+        }),
+      }))
+    )
+    setCargandoHist(false)
+  }
+
   const filtrados = items.filter(i =>
     busqueda === '' || i.nombre.toLowerCase().includes(busqueda.toLowerCase())
   )
@@ -217,21 +397,6 @@ export default function ItemsHerramientasDetalle() {
             {area.descripcion}
           </p>
         )}
-      </div>
-
-      {/* ── Stats ── */}
-      <div style={{ display: 'flex', gap: '0.9rem', marginBottom: '1.4rem', flexWrap: 'wrap' }}>
-        {[
-          { label: 'Total',     icono: '📦', valor: items.length,                                          variante: 'azul'  },
-          { label: 'Completas', icono: '✅', valor: items.filter(i => i.estado === 'completa').length,     variante: 'verde' },
-          { label: 'Faltantes', icono: '⚠️', valor: items.filter(i => i.estado === 'faltante' || i.estado === 'perdida').length, variante: 'rojo' },
-        ].map(s => (
-          <div key={s.label} className={`her-stat-card her-stat-card--${s.variante}`} style={{ flex: '1 1 130px', minWidth: '130px', textAlign: 'center' }}>
-            <div className="her-stat-icon" style={{ margin: '0 auto 0.7rem' }}>{s.icono}</div>
-            <div className="her-stat-valor">{s.valor}</div>
-            <div className="her-stat-label">{s.label}</div>
-          </div>
-        ))}
       </div>
 
       {/* ── Tabs ── */}
@@ -322,10 +487,175 @@ export default function ItemsHerramientasDetalle() {
         </div>
       )}
 
-      {/* ── Tabs vacíos ── */}
-      {tabActiva === 'revisiones'  && <TabVacia icono="📋" mensaje="No hay revisiones registradas para esta área." />}
-      {tabActiva === 'solicitudes' && <TabVacia icono="📨" mensaje="No hay solicitudes para esta área." />}
-      {tabActiva === 'historial'   && <TabVacia icono="🕐" mensaje="Sin historial registrado." />}
+      {/* ── Tab: Revisión ── */}
+      {tabActiva === 'revision' && (
+        <div>
+          {ultimaRevision && calcularRetrasoArea(area.dia_revision, ultimaRevision).diasRetraso > 0 && (
+            <div className="her-card" style={{ padding: '0.875rem 1.125rem', marginBottom: '1rem', border: '1.5px solid #FECACA', background: '#FEF2F2' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#DC2626' }}>
+                ⏰ {calcularRetrasoArea(area.dia_revision, ultimaRevision).diasRetraso} día{calcularRetrasoArea(area.dia_revision, ultimaRevision).diasRetraso !== 1 ? 's' : ''} de retraso — última revisión: {ultimaRevision ? formatFecha(ultimaRevision) : 'nunca'}
+              </span>
+            </div>
+          )}
+
+          {items.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2.5rem 0' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📋</div>
+              <p style={sTxtGris}>No hay herramientas registradas para revisar en esta área.</p>
+            </div>
+          ) : (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginBottom: '1.25rem' }}>
+                {items.map(item => (
+                  <div key={item.id} className="her-card" style={{ padding: '0.875rem 1.125rem' }}>
+                    <div style={{ fontWeight: '700', color: '#111827', fontSize: '0.88rem', marginBottom: '0.625rem' }}>
+                      {item.nombre}
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      {ESTADOS_REVISABLES.map(estado => {
+                        const est = ESTADO_ITEM[estado]
+                        const activo = (marcados[item.id] ?? item.estado) === estado
+                        return (
+                          <button
+                            key={estado}
+                            onClick={() => marcarEstado(item.id, estado)}
+                            style={{
+                              padding: '0.3rem 0.65rem', borderRadius: '10px', fontSize: '0.72rem', fontWeight: '700',
+                              cursor: 'pointer', transition: 'all 0.15s',
+                              border: `1.5px solid ${activo ? est.color : '#E5E7EB'}`,
+                              background: activo ? est.bg : 'white',
+                              color: activo ? est.color : '#6B7280',
+                            }}
+                          >
+                            {est.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {errRev && <p style={{ color: '#DC2626', fontSize: '0.82rem', margin: '0 0 1rem', background: '#FEE2E2', padding: '0.5rem 0.75rem', borderRadius: '8px' }}>⚠️ {errRev}</p>}
+
+              <button
+                className="her-btn her-btn--primary"
+                onClick={guardarRevisionArea}
+                disabled={guardandoRev || guardadoRev}
+                style={{ width: '100%' }}
+              >
+                {guardadoRev ? '✅ Revisión guardada' : guardandoRev ? 'Guardando...' : 'Guardar revisión'}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── Tab: Reporte ── */}
+      {tabActiva === 'reporte' && (
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.9rem', marginBottom: '1.25rem' }}>
+            {[
+              { label: 'Total',     icono: '📦', valor: items.length, variante: 'azul' as const },
+              { label: 'Completas', icono: '✅', valor: items.filter(i => i.estado === 'completa').length, variante: 'verde' as const },
+              { label: 'Faltantes', icono: '⚠️', valor: items.filter(i => i.estado === 'faltante').length, variante: 'amarillo' as const },
+              { label: 'Pérdidas',  icono: '🔴', valor: items.filter(i => i.estado === 'perdida').length, variante: 'rojo' as const },
+            ].map(s => (
+              <div key={s.label} className={`her-stat-card her-stat-card--${s.variante}`} style={{ textAlign: 'center' }}>
+                <div className="her-stat-icon" style={{ margin: '0 auto 0.7rem' }}>{s.icono}</div>
+                <div className="her-stat-valor">{s.valor}</div>
+                <div className="her-stat-label">{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          <button className="her-btn her-btn--secondary" onClick={() => setTabActiva('historial')} style={{ width: '100%' }}>
+            🕐 Ver historial de revisiones
+          </button>
+        </div>
+      )}
+
+      {/* ── Tab: Historial ── */}
+      {tabActiva === 'historial' && (
+        <div>
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+            {(['semana', 'mes', 'anio'] as Periodo[]).map(per => {
+              const activo = periodoHist === per
+              return (
+                <button
+                  key={per}
+                  onClick={() => setPeriodoHist(per)}
+                  className={`her-btn her-btn--sm ${activo ? 'her-btn--primary' : 'her-btn--secondary'}`}
+                  style={{ flex: 1 }}
+                >
+                  {PERIODO_LABELS[per]}
+                </button>
+              )
+            })}
+          </div>
+
+          {cargandoHist ? (
+            <p style={{ ...sTxtGris, textAlign: 'center', padding: '1rem 0' }}>Cargando historial...</p>
+          ) : historial.length === 0 ? (
+            <div className="her-card" style={{ textAlign: 'center', padding: '2rem', border: '1px dashed #E5E7EB' }}>
+              <div style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>📭</div>
+              <p style={sTxtGris}>Sin revisiones en este período.</p>
+            </div>
+          ) : (() => {
+            const puntuales  = historial.filter(r => r.dias_retraso === 0).length
+            const conRetraso = historial.filter(r => r.dias_retraso > 0).length
+            const totalPerdidas = historial.reduce((s, r) => s + r.detalles.filter(d => d.resultado === 'perdida').length, 0)
+            const totalFaltantes = historial.reduce((s, r) => s + r.detalles.filter(d => d.resultado === 'faltante').length, 0)
+
+            return (
+              <>
+                <div className="her-card" style={{ padding: '0.875rem', marginBottom: '0.875rem' }}>
+                  <div style={sTitSec}>Resumen — {PERIODO_LABELS[periodoHist]}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', marginTop: '0.625rem' }}>
+                    <MiniStatArea label="Total revisiones" val={historial.length} color="#374151" />
+                    <MiniStatArea label="✅ Puntuales" val={puntuales} color="#059669" />
+                    <MiniStatArea label="⚠️ Con retraso" val={conRetraso} color="#DC2626" />
+                    <MiniStatArea label="Pérdidas/Faltantes" val={totalPerdidas + totalFaltantes} color="#D97706" />
+                  </div>
+                </div>
+
+                <div style={sTitSec}>Detalle de revisiones</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  {historial.map(rev => {
+                    const puntual = rev.dias_retraso === 0
+                    const relevantes = rev.detalles.filter(d => d.resultado !== 'completa')
+                    return (
+                      <div key={rev.id} className="her-card" style={{ padding: '0.875rem', border: `1px solid ${puntual ? '#D1FAE5' : '#FECACA'}` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                          <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#374151' }}>📅 {formatFecha(rev.fecha_revision)}</span>
+                          <span style={{ fontSize: '0.7rem', fontWeight: '700', padding: '0.15rem 0.5rem', borderRadius: '20px', color: puntual ? '#059669' : '#DC2626', background: puntual ? '#D1FAE5' : '#FEE2E2', whiteSpace: 'nowrap' }}>
+                            {puntual ? '✅ Puntual' : `⚠️ ${rev.dias_retraso} día${rev.dias_retraso !== 1 ? 's' : ''} retraso`}
+                          </span>
+                        </div>
+                        {rev.fecha_esperada && (
+                          <div style={{ fontSize: '0.72rem', color: '#9CA3AF' }}>Esperada: {formatFecha(rev.fecha_esperada)}</div>
+                        )}
+                        {relevantes.length > 0 && (
+                          <div style={{ marginTop: '0.375rem', display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                            {relevantes.map((d, i) => {
+                              const est = ESTADO_ITEM[d.resultado] ?? ESTADO_ITEM.completa
+                              return (
+                                <span key={i} style={{ fontSize: '0.68rem', fontWeight: '700', color: est.color, background: est.bg, padding: '0.15rem 0.5rem', borderRadius: '12px' }}>
+                                  {d.nombre}: {est.label}
+                                </span>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )
+          })()}
+        </div>
+      )}
 
       {/* ── Tab: Información ── */}
       {tabActiva === 'informacion' && (
@@ -448,11 +778,11 @@ export default function ItemsHerramientasDetalle() {
 }
 
 // ─── Sub-componentes ──────────────────────────────────────────────────────────
-function TabVacia({ icono, mensaje }: { icono: string; mensaje: string }) {
+function MiniStatArea({ label, val, color }: { label: string; val: number; color: string }) {
   return (
-    <div style={{ textAlign: 'center', padding: '2.5rem 0' }}>
-      <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>{icono}</div>
-      <p style={sTxtGris}>{mensaje}</p>
+    <div style={{ textAlign: 'center', padding: '0.5rem 0.375rem', background: '#FAFAFA', borderRadius: '12px', border: '1px solid rgba(13,37,84,0.04)' }}>
+      <div style={{ fontSize: '1.1rem', fontWeight: '800', color }}>{val}</div>
+      <div style={{ fontSize: '0.65rem', color: '#9CA3AF', marginTop: '0.1rem' }}>{label}</div>
     </div>
   )
 }
@@ -473,3 +803,4 @@ const sTxtGris: CSSProperties     = { color: '#9CA3AF', fontSize: '0.875rem', ma
 const sInfoTxt: CSSProperties     = { fontSize: '0.82rem', color: 'rgba(255,255,255,0.85)' }
 const sLabel: CSSProperties       = { display: 'block', fontSize: '0.78rem', fontWeight: '600', color: '#374151', marginBottom: '0.375rem' }
 const sBtnVolver: CSSProperties   = { background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#2563EB', fontWeight: '600', padding: '0 0 1rem 0', display: 'block' }
+const sTitSec: CSSProperties      = { fontSize: '0.75rem', fontWeight: '700', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.06em' }
